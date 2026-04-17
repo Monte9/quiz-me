@@ -13,9 +13,9 @@ export function InterestChips({ interests }: { interests: Interest[] }) {
       {interests.map((i) => (
         <span
           key={i.name}
-          className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-text-muted)]"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-2.5 py-1 text-xs font-medium text-[var(--color-text-dim)]"
         >
-          <span className="h-1 w-1 rounded-full bg-[var(--color-accent-dim)]" />
+          <span className="h-1 w-1 rounded-full bg-[var(--color-accent)]" />
           {i.name}
         </span>
       ))}

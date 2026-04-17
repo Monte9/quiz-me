@@ -1,51 +1,50 @@
 import { UserStats } from "@/lib/users";
 
 export function StatBar({ stats }: { stats: UserStats }) {
-  const tiles: { label: string; value: string; tone?: "accent" | "good" }[] = [
+  const tiles: { label: string; value: string; accent?: boolean }[] = [
     { label: "Total", value: String(stats.total) },
+    { label: "Streak", value: stats.streak > 0 ? `${stats.streak}d` : "—" },
   ];
 
   if (stats.correctRate !== null) {
     tiles.push({
       label: "Correct",
       value: `${stats.correctRate}%`,
-      tone: "good",
+      accent: true,
     });
-  }
-
-  tiles.push({ label: "Streak", value: `${stats.streak}d` });
-
-  if (stats.topTopic) {
-    tiles.push({ label: "Top topic", value: stats.topTopic });
   }
 
   if (stats.xhardAvg !== null) {
     tiles.push({
-      label: "xHard",
-      value: `${stats.xhardAvg.toFixed(1)}/5`,
-      tone: "accent",
+      label: "xHard avg",
+      value: `${stats.xhardAvg.toFixed(1)}`,
+      accent: true,
     });
+  } else if (stats.topTopic) {
+    tiles.push({ label: "Top topic", value: stats.topTopic });
   }
 
   return (
-    <div className="flex flex-wrap justify-center gap-2 text-xs">
-      {tiles.map((t) => {
-        const toneClass =
-          t.tone === "good"
-            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-            : t.tone === "accent"
-              ? "border-[var(--color-accent-dim)] bg-[var(--color-accent-glow)] text-[var(--color-accent)]"
-              : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)]";
-        return (
-          <span
-            key={t.label}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-medium ${toneClass}`}
+    <div className="mx-auto grid max-w-2xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-border)] sm:grid-cols-4">
+      {tiles.map((t) => (
+        <div
+          key={t.label}
+          className="bg-[var(--color-bg-raised)] px-4 py-5 text-center"
+        >
+          <div
+            className={`font-display text-3xl leading-none tracking-tight sm:text-4xl ${
+              t.accent
+                ? "text-[var(--color-accent)]"
+                : "text-[var(--color-text)]"
+            }`}
           >
-            <span className="opacity-60">{t.label}</span>
-            <span>{t.value}</span>
-          </span>
-        );
-      })}
+            {t.value}
+          </div>
+          <div className="mt-2 text-[0.65rem] font-semibold tracking-[0.15em] text-[var(--color-text-muted)] uppercase">
+            {t.label}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

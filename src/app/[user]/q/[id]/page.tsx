@@ -1,12 +1,13 @@
 import { getAllUsers, getQuestionById } from "@/lib/users";
+import { BrandBar } from "@/components/BrandBar";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 const difficultyStyles: Record<string, string> = {
-  easy: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-  medium: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  hard: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  xhard: "bg-red-500/20 text-red-400 border-red-500/30",
+  easy: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+  medium: "bg-sky-500/15 text-sky-300 border-sky-500/30",
+  hard: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+  xhard: "bg-red-500/15 text-red-300 border-red-500/30",
 };
 
 const difficultyLabels: Record<string, string> = {
@@ -17,17 +18,17 @@ const difficultyLabels: Record<string, string> = {
 };
 
 const resultStyles: Record<string, string> = {
-  correct: "bg-emerald-500/20 text-emerald-400",
-  partial: "bg-amber-500/20 text-amber-400",
-  wrong: "bg-red-500/20 text-red-400",
-  skipped: "bg-zinc-500/20 text-zinc-400",
+  correct: "bg-emerald-500/15 text-emerald-300",
+  partial: "bg-amber-500/15 text-amber-300",
+  wrong: "bg-red-500/15 text-red-300",
+  skipped: "bg-zinc-500/15 text-zinc-400",
 };
 
 const resultLabels: Record<string, string> = {
-  correct: "✓ Correct",
-  partial: "~ Partial",
-  wrong: "✗ Wrong",
-  skipped: "— Skipped",
+  correct: "Correct",
+  partial: "Partial",
+  wrong: "Wrong",
+  skipped: "Skipped",
 };
 
 export const dynamicParams = false;
@@ -55,15 +56,23 @@ export default async function QuestionPage({
   const backHref = username === "monte" ? "/" : `/${username}`;
 
   return (
-    <div className="min-h-screen">
-      <article className="mx-auto max-w-2xl px-6 pt-12 pb-16">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+    <div className="flex min-h-screen flex-col">
+      <BrandBar />
+      <article className="mx-auto w-full max-w-2xl flex-1 px-6 pt-12 pb-16">
+        <Link
+          href={backHref}
+          className="mb-8 inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
+        >
+          ← Back
+        </Link>
+
+        <div className="mb-6 flex flex-wrap items-center gap-2">
           <span
-            className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${difficultyStyles[q.difficulty] || ""}`}
+            className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase ${difficultyStyles[q.difficulty] || ""}`}
           >
             {difficultyLabels[q.difficulty] || q.difficulty}
           </span>
-          <span className="text-xs text-[var(--color-accent-dim)]">
+          <span className="text-xs font-medium text-[var(--color-text-dim)]">
             {q.topic}
           </span>
           {q.medium === "image" && (
@@ -72,41 +81,45 @@ export default async function QuestionPage({
             </span>
           )}
           <span className="ml-auto text-xs text-[var(--color-text-muted)]">
-            {new Date(q.createdAt).toLocaleString()}
+            {new Date(q.createdAt).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
           </span>
         </div>
 
         {q.imagePath && (
-          <div className="mb-6 overflow-hidden rounded-2xl border border-[var(--color-border)]">
+          <div className="mb-8 overflow-hidden rounded-2xl border border-[var(--color-border)]">
             <img src={q.imagePath} alt="Quiz image" className="w-full" />
           </div>
         )}
 
-        <h1 className="mb-6 text-2xl font-bold leading-snug sm:text-3xl">
+        <h1 className="font-display mb-8 text-3xl leading-tight font-semibold tracking-tight text-[var(--color-text)] sm:text-4xl">
           {q.question}
         </h1>
 
-        <div className="mb-6">
+        <div className="mb-8">
           {showScore ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-accent-glow)] px-3 py-1 text-sm font-medium text-[var(--color-accent)]">
-              Thoughtfulness {q.thoughtfulnessScore}/5
+            <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-accent-glow)] px-3 py-1 text-sm font-semibold text-[var(--color-accent)]">
+              {q.thoughtfulnessScore}/5 thoughtfulness
             </span>
           ) : q.result ? (
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium ${resultStyles[q.result] || ""}`}
+              className={`inline-flex items-center gap-1 rounded-md px-3 py-1 text-sm font-semibold ${resultStyles[q.result] || ""}`}
             >
               {resultLabels[q.result] || q.result}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/20 px-3 py-1 text-sm font-medium text-zinc-400">
+            <span className="inline-flex items-center gap-1 rounded-md bg-zinc-500/15 px-3 py-1 text-sm font-semibold text-zinc-400">
               Pending
             </span>
           )}
         </div>
 
         {q.userAnswer && (
-          <section className="mb-6">
-            <h2 className="mb-2 text-xs font-semibold tracking-wider text-[var(--color-text-muted)] uppercase">
+          <section className="mb-8">
+            <h2 className="mb-3 text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
               Answer given
             </h2>
             <p className="text-base leading-relaxed whitespace-pre-wrap text-[var(--color-text)]">
@@ -116,22 +129,22 @@ export default async function QuestionPage({
         )}
 
         {q.answerKey && (
-          <section className="mb-6">
-            <h2 className="mb-2 text-xs font-semibold tracking-wider text-[var(--color-text-muted)] uppercase">
+          <section className="mb-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-raised)] p-5">
+            <h2 className="mb-3 text-xs font-semibold tracking-[0.2em] text-[var(--color-accent)] uppercase">
               {q.difficulty === "xhard" ? "Reference framing" : "Answer"}
             </h2>
-            <p className="text-base leading-relaxed whitespace-pre-wrap text-[var(--color-text)]">
+            <p className="text-base leading-relaxed whitespace-pre-wrap text-[var(--color-text-dim)]">
               {q.answerKey}
             </p>
           </section>
         )}
 
         {q.grade && (
-          <section className="mb-6 border-l-2 border-[var(--color-accent-dim)] pl-4">
-            <h2 className="mb-2 text-xs font-semibold tracking-wider text-[var(--color-text-muted)] uppercase">
+          <section className="mb-8 border-l-2 border-[var(--color-accent-dim)] pl-5">
+            <h2 className="mb-2 text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
               Ash's grade
             </h2>
-            <p className="text-base leading-relaxed whitespace-pre-wrap text-[var(--color-text-muted)] italic">
+            <p className="text-base leading-relaxed whitespace-pre-wrap text-[var(--color-text-dim)] italic">
               {q.grade}
             </p>
           </section>
@@ -140,7 +153,7 @@ export default async function QuestionPage({
 
       <footer className="border-t border-[var(--color-border)] py-8 text-center text-sm text-[var(--color-text-muted)]">
         <Link href={backHref} className="hover:text-[var(--color-accent)]">
-          ← Back
+          ← Back to {username === "monte" ? "Monte" : username}
         </Link>
       </footer>
     </div>
