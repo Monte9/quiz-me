@@ -1,4 +1,4 @@
-import { getAllIds, getQuestionById } from "@/lib/quiz";
+import { getAllUsers, getQuestionById } from "@/lib/users";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -33,19 +33,26 @@ const resultLabels: Record<string, string> = {
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  return getAllIds().map((id) => ({ id }));
+  const out: { user: string; id: string }[] = [];
+  for (const u of getAllUsers()) {
+    for (const q of u.questions) {
+      out.push({ user: u.username, id: q.id });
+    }
+  }
+  return out;
 }
 
 export default async function QuestionPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ user: string; id: string }>;
 }) {
-  const { id } = await params;
-  const q = getQuestionById(id);
+  const { user: username, id } = await params;
+  const q = getQuestionById(username, id);
   if (!q) notFound();
 
   const showScore = q.difficulty === "xhard" && q.thoughtfulnessScore !== null;
+  const backHref = username === "monte" ? "/" : `/${username}`;
 
   return (
     <div className="min-h-screen">
@@ -100,7 +107,7 @@ export default async function QuestionPage({
         {q.userAnswer && (
           <section className="mb-6">
             <h2 className="mb-2 text-xs font-semibold tracking-wider text-[var(--color-text-muted)] uppercase">
-              Your answer
+              Answer given
             </h2>
             <p className="text-base leading-relaxed whitespace-pre-wrap text-[var(--color-text)]">
               {q.userAnswer}
@@ -132,8 +139,8 @@ export default async function QuestionPage({
       </article>
 
       <footer className="border-t border-[var(--color-border)] py-8 text-center text-sm text-[var(--color-text-muted)]">
-        <Link href="/" className="hover:text-[var(--color-accent)]">
-          ← Back to all questions
+        <Link href={backHref} className="hover:text-[var(--color-accent)]">
+          ← Back
         </Link>
       </footer>
     </div>
