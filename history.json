@@ -1,19 +1,24 @@
 {
-  "interests": [],
+  "interests": [
+    {
+      "name": "porsche-cars",
+      "addedAt": "2026-04-17T12:21:22-07:00"
+    }
+  ],
   "questions": [
     {
-      "id": "20260417-000000-welcome",
-      "difficulty": "easy",
+      "id": "20260417-122122-carrera-nameplate",
+      "difficulty": "medium",
       "medium": "text",
-      "topic": "meta",
-      "question": "Welcome to Quiz Me. Is Ash ready to start quizzing Monte?",
-      "answerKey": "Yes.",
-      "userAnswer": "Yes.",
-      "result": "correct",
+      "topic": "porsche-cars",
+      "question": "In 1954, a small, lightweight Porsche racer called the 550 Spyder dominated a brutal open-road race through Mexico. The race was so infamous that its name stuck to Porsche's most famous performance sub-brand — still stamped on the back of 911s today. What is that nameplate?",
+      "answerKey": "Carrera — from the Carrera Panamericana, a 2,000-mile open-road race across Mexico (1950–1954). Porsche's 550 Spyder won its class in 1953 and 1954. Used on 911s ever since (911 Carrera, Carrera S, Carrera GT).",
+      "userAnswer": null,
+      "result": "skipped",
       "thoughtfulnessScore": null,
       "imagePath": null,
-      "grade": "First entry. The real questions start next.",
-      "createdAt": "2026-04-17T00:00:00-07:00"
+      "grade": null,
+      "createdAt": "2026-04-17T12:21:22-07:00"
     }
   ]
 }
