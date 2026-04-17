@@ -1,9 +1,16 @@
 {
   "interests": [
-    {
-      "name": "porsche-cars",
-      "addedAt": "2026-04-17T12:21:22-07:00"
-    }
+    { "name": "porsche-cars", "addedAt": "2026-04-17T12:21:22-07:00" },
+    { "name": "roman-history", "addedAt": "2026-04-17T12:24:01-07:00" },
+    { "name": "indian-mythology", "addedAt": "2026-04-17T12:24:01-07:00" },
+    { "name": "systems-engineering", "addedAt": "2026-04-17T12:24:01-07:00" },
+    { "name": "data-structures-l5", "addedAt": "2026-04-17T12:24:01-07:00" },
+    { "name": "algorithms-l5", "addedAt": "2026-04-17T12:24:01-07:00" },
+    { "name": "pickleball", "addedAt": "2026-04-17T12:24:01-07:00" },
+    { "name": "geography", "addedAt": "2026-04-17T12:24:01-07:00" },
+    { "name": "moon", "addedAt": "2026-04-17T12:24:01-07:00" },
+    { "name": "mars", "addedAt": "2026-04-17T12:24:01-07:00" },
+    { "name": "startups-product", "addedAt": "2026-04-17T12:24:01-07:00" }
   ],
   "questions": [
     {
