@@ -1,7 +1,4 @@
-import fs from "fs";
-import path from "path";
-
-const usersPath = path.join(process.cwd(), "users.json");
+import { sql } from "@/lib/db";
 
 export type Difficulty = "easy" | "medium" | "hard" | "xhard";
 export type Medium = "text" | "image";
@@ -38,46 +35,84 @@ export interface User {
   questions: Question[];
 }
 
-interface UsersFile {
-  users: Record<string, Omit<User, "username">>;
+function iso(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
+  return String(value);
 }
 
-function readUsersFile(): UsersFile {
-  if (!fs.existsSync(usersPath)) return { users: {} };
-  try {
-    const raw = fs.readFileSync(usersPath, "utf-8");
-    const parsed = JSON.parse(raw) as Partial<UsersFile>;
-    return { users: parsed.users ?? {} };
-  } catch {
-    return { users: {} };
+function mapQuestion(row: Record<string, unknown>): Question {
+  return {
+    id: row.id as string,
+    difficulty: row.difficulty as Difficulty,
+    medium: row.medium as Medium,
+    topic: row.topic as string,
+    question: row.question as string,
+    answerKey: row.answer_key as string,
+    userAnswer: (row.user_answer as string | null) ?? null,
+    result: (row.result as Result | null) ?? null,
+    thoughtfulnessScore: (row.thoughtfulness_score as number | null) ?? null,
+    imagePath: (row.image_path as string | null) ?? null,
+    grade: (row.grade as string | null) ?? null,
+    createdAt: iso(row.created_at),
+  };
+}
+
+function mapUser(
+  row: Record<string, unknown>,
+  questions: Question[],
+): User {
+  return {
+    username: row.username as string,
+    displayName: row.display_name as string,
+    createdAt: iso(row.created_at),
+    claimedAt: row.claimed_at ? iso(row.claimed_at) : null,
+    password: (row.password as string | null) ?? null,
+    inviteCode: (row.invite_code as string | null) ?? null,
+    interests: (row.interests as Interest[] | null) ?? [],
+    questions,
+  };
+}
+
+export async function getAllUsers(): Promise<User[]> {
+  const [userRows, questionRows] = await Promise.all([
+    sql`select * from users order by created_at asc`,
+    sql`select * from questions order by created_at desc`,
+  ]);
+
+  const byUser = new Map<string, Question[]>();
+  for (const row of questionRows) {
+    const username = row.username as string;
+    const arr = byUser.get(username) ?? [];
+    arr.push(mapQuestion(row));
+    byUser.set(username, arr);
   }
+
+  return userRows.map((u) => mapUser(u, byUser.get(u.username as string) ?? []));
 }
 
-export function getAllUsers(): User[] {
-  const { users } = readUsersFile();
-  return Object.entries(users)
-    .map(([username, data]) => ({ username, ...data }))
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+export async function getAllUsernames(): Promise<string[]> {
+  const rows = await sql`select username from users`;
+  return rows.map((r) => r.username as string);
 }
 
-export function getAllUsernames(): string[] {
-  return Object.keys(readUsersFile().users);
+export async function getUser(username: string): Promise<User | null> {
+  const [userRows, questionRows] = await Promise.all([
+    sql`select * from users where username = ${username}`,
+    sql`select * from questions where username = ${username} order by created_at desc`,
+  ]);
+  if (userRows.length === 0) return null;
+  return mapUser(userRows[0], questionRows.map(mapQuestion));
 }
 
-export function getUser(username: string): User | null {
-  const { users } = readUsersFile();
-  const data = users[username];
-  if (!data) return null;
-  return { username, ...data };
-}
-
-export function getQuestionById(
+export async function getQuestionById(
   username: string,
   id: string,
-): Question | null {
-  const user = getUser(username);
-  if (!user) return null;
-  return user.questions.find((q) => q.id === id) ?? null;
+): Promise<Question | null> {
+  const rows = await sql`
+    select * from questions where username = ${username} and id = ${id}
+  `;
+  if (rows.length === 0) return null;
+  return mapQuestion(rows[0]);
 }
 
 export interface UserStats {
@@ -129,14 +164,10 @@ export function computeStats(user: User): UserStats {
 
 function computeStreak(questions: Question[]): number {
   if (questions.length === 0) return 0;
-  const dates = new Set(
-    questions.map((q) => q.createdAt.slice(0, 10)),
-  );
+  const dates = new Set(questions.map((q) => q.createdAt.slice(0, 10)));
   const today = new Date();
   const todayStr = toDateString(today);
-  const yesterdayStr = toDateString(
-    new Date(today.getTime() - 86400000),
-  );
+  const yesterdayStr = toDateString(new Date(today.getTime() - 86400000));
 
   let cursor: Date;
   if (dates.has(todayStr)) cursor = today;
@@ -159,7 +190,5 @@ function toDateString(d: Date): string {
 }
 
 export function sortQuestionsByDate(questions: Question[]): Question[] {
-  return [...questions].sort((a, b) =>
-    b.createdAt.localeCompare(a.createdAt),
-  );
+  return [...questions].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }

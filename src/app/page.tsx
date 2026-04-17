@@ -6,9 +6,11 @@ import { Hero } from "@/components/Hero";
 import { HowItWorks } from "@/components/HowItWorks";
 import { notFound } from "next/navigation";
 
-export default function Home() {
-  const users = getAllUsers();
-  const monte = getUser("monte");
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const users = await getAllUsers();
+  const monte = await getUser("monte");
   if (!monte) notFound();
 
   const totalQuestions = users.reduce((n, u) => n + u.questions.length, 0);

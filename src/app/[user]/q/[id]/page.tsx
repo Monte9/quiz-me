@@ -1,4 +1,4 @@
-import { getAllUsers, getQuestionById } from "@/lib/users";
+import { getQuestionById } from "@/lib/users";
 import { BrandBar } from "@/components/BrandBar";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -31,25 +31,13 @@ const resultLabels: Record<string, string> = {
   skipped: "Skipped",
 };
 
-export const dynamicParams = false;
-
-export async function generateStaticParams() {
-  const out: { user: string; id: string }[] = [];
-  for (const u of getAllUsers()) {
-    for (const q of u.questions) {
-      out.push({ user: u.username, id: q.id });
-    }
-  }
-  return out;
-}
-
 export default async function QuestionPage({
   params,
 }: {
   params: Promise<{ user: string; id: string }>;
 }) {
   const { user: username, id } = await params;
-  const q = getQuestionById(username, id);
+  const q = await getQuestionById(username, id);
   if (!q) notFound();
 
   const showScore = q.difficulty === "xhard" && q.thoughtfulnessScore !== null;

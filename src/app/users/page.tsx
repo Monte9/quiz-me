@@ -4,8 +4,10 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { UserCard, JoinCard } from "@/components/UserCard";
 import Link from "next/link";
 
-export default function UsersPage() {
-  const users = getAllUsers();
+export const dynamic = "force-dynamic";
+
+export default async function UsersPage() {
+  const users = await getAllUsers();
 
   return (
     <div className="flex min-h-screen flex-col">

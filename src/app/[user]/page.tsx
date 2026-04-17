@@ -1,4 +1,4 @@
-import { getUser, getAllUsernames } from "@/lib/users";
+import { getUser } from "@/lib/users";
 import { UserDashboard } from "@/components/UserDashboard";
 import { ClaimStub } from "@/components/ClaimStub";
 import { BrandBar } from "@/components/BrandBar";
@@ -6,21 +6,13 @@ import { SiteFooter } from "@/components/SiteFooter";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export const dynamicParams = false;
-
-export async function generateStaticParams() {
-  return getAllUsernames()
-    .filter((u) => u !== "monte")
-    .map((user) => ({ user }));
-}
-
 export default async function UserPage({
   params,
 }: {
   params: Promise<{ user: string }>;
 }) {
   const { user: username } = await params;
-  const user = getUser(username);
+  const user = await getUser(username);
   if (!user) notFound();
 
   const claimed = user.claimedAt !== null;
