@@ -32,9 +32,14 @@ html {
 body {
   background:
     radial-gradient(
-      ellipse 90% 50% at 50% -10%,
-      var(--color-accent-wash),
-      transparent 70%
+      ellipse 70% 50% at 50% 0%,
+      rgba(52, 211, 153, 0.14),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 40% 30% at 50% 0%,
+      rgba(110, 231, 183, 0.08),
+      transparent 50%
     ),
     var(--color-bg);
   color: var(--color-text);

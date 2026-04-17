@@ -1,4 +1,5 @@
 import { Interest } from "@/lib/users";
+import { Fragment } from "react";
 
 export function InterestChips({ interests }: { interests: Interest[] }) {
   if (interests.length === 0) {
@@ -9,16 +10,20 @@ export function InterestChips({ interests }: { interests: Interest[] }) {
     );
   }
   return (
-    <div className="flex flex-wrap justify-center gap-1.5">
-      {interests.map((i) => (
-        <span
-          key={i.name}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-2.5 py-1 text-xs font-medium text-[var(--color-text-dim)]"
-        >
-          <span className="h-1 w-1 rounded-full bg-[var(--color-accent)]" />
-          {i.name}
-        </span>
-      ))}
+    <div className="text-center">
+      <span className="mr-3 text-[0.7rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+        Interests
+      </span>
+      <span className="text-sm leading-loose text-[var(--color-text-dim)]">
+        {interests.map((i, idx) => (
+          <Fragment key={i.name}>
+            {idx > 0 && (
+              <span className="mx-2 text-[var(--color-text-muted)]">·</span>
+            )}
+            <span className="hover:text-[var(--color-accent)]">{i.name}</span>
+          </Fragment>
+        ))}
+      </span>
     </div>
   );
 }

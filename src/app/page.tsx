@@ -3,6 +3,8 @@ import { UserSwitcher } from "@/components/UserSwitcher";
 import { UserDashboard } from "@/components/UserDashboard";
 import { BrandBar } from "@/components/BrandBar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { Hero } from "@/components/Hero";
+import { HowItWorks } from "@/components/HowItWorks";
 import { notFound } from "next/navigation";
 
 export default function Home() {
@@ -10,13 +12,32 @@ export default function Home() {
   const monte = getUser("monte");
   if (!monte) notFound();
 
+  const totalQuestions = users.reduce((n, u) => n + u.questions.length, 0);
+  const topicSet = new Set<string>();
+  for (const u of users) {
+    for (const i of u.interests) topicSet.add(i.name);
+    for (const q of u.questions) topicSet.add(q.topic);
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <BrandBar />
       <UserSwitcher users={users} activeUsername="monte" />
-      <div className="flex-1">
-        <UserDashboard user={monte} />
+
+      <Hero
+        users={users.length}
+        totalQuestions={totalQuestions}
+        totalTopics={topicSet.size}
+      />
+
+      <HowItWorks />
+
+      <div className="border-t border-[var(--color-border)]">
+        <div className="flex-1">
+          <UserDashboard user={monte} variant="compact" />
+        </div>
       </div>
+
       <SiteFooter />
     </div>
   );
