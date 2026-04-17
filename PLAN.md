@@ -13,12 +13,12 @@ A quiz habit that compounds. Ash asks Monte questions across difficulties (easy/
 ## Current State
 
 - Repo: [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me) (private), `main` pushed
+- **Live at [quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — auto-deploys on push to main
 - Next.js 16 + Tailwind 4, static export, mirrors history-stories scaffolding
-- Build passes locally (`pnpm build` → static export of `/` and `/q/[id]`)
-- `history.json` at repo root holds `interests` + `questions`; seeded with one welcome entry (deletable)
+- `history.json` at repo root holds `interests` + `questions`; seeded with one welcome entry (skill deletes it on first real quiz)
 - Browse grid on `/`, detail page on `/q/[id]`, saffron-gold accent, difficulty color coding, xhard shows 1–5 thoughtfulness score instead of correct/wrong
-- **Not yet:** Vercel not connected, skill not yet writing real quizzes, interests empty
-- Writer skill: [ash-core/skills/quiz-me/SKILL.md](../ash-core/skills/quiz-me/SKILL.md) — persists updates to `history.json` and commits
+- Writer skill: [ash-core/skills/quiz-me/SKILL.md](../ash-core/skills/quiz-me/SKILL.md) — writes to `history.json`, generates images via `nano-banana` when needed, commits + pushes after grading
+- **Not yet:** interests empty (bootstrap on first `quiz me` invocation), no real questions answered
 
 ---
 
@@ -30,7 +30,7 @@ A quiz habit that compounds. Ash asks Monte questions across difficulties (easy/
 | 2 | State shape | Single `history.json` at repo root — `interests` + `questions` |
 | 3 | Metrics | Questions/day (bar by difficulty), correct-rate line, streak, topic breakdown |
 | 4 | Assets | `public/quiz/YYYYMMDD-HHmmss-<slug>.png` for image-medium questions |
-| 5 | Domain | `quizme.vercel.app` for now |
+| 5 | Domain | `quizmenexus.vercel.app` (quizme was taken) |
 | 6 | Mediums | `text` + `image` only (audio dropped) |
 | 7 | xHard grading | Not correct/wrong — scored 1–5 on thoughtfulness + comprehensiveness |
 | 8 | Skip | `result: "skipped"`; eligible for re-ask |
@@ -85,13 +85,12 @@ A quiz habit that compounds. Ash asks Monte questions across difficulties (easy/
 
 ## Phases
 
-### Phase 1: Deploy + first real quizzes (active)
+### Phase 1: First real quizzes (active)
 
-- Import repo into Vercel (Monte) → alias `quizme.vercel.app`
-- Update SKILL.md to write to `~/Projects/quiz-me/history.json`, commit `quiz: <difficulty> <topic> — <result>`, push
-- On first run: skill reads `interests`; if empty, asks Monte for 3–5 topics and writes them back before the first question
-- Delete the welcome seed entry once a real question lands
-- **Exit:** Monte answers a question, refreshes the site on his phone 2 minutes later, sees it
+- Deployed ✓ ([quizmenexus.vercel.app](https://quizmenexus.vercel.app))
+- SKILL.md updated ✓ — writes to `~/Projects/quiz-me/history.json`, calls `nano-banana` for image medium, commits `quiz: <difficulty> <topic> — <result>`, pushes
+- **Next:** Monte runs `quiz me` → skill asks for 3–5 interests → Monte answers → first real question flows → skill grades → commit + push → shows up live
+- **Exit:** Monte answers a real question, refreshes the site 30 seconds later, sees it in place of the welcome seed
 
 ### Phase 2: Charts
 
