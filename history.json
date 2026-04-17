@@ -1,0 +1,19 @@
+{
+  "interests": [],
+  "questions": [
+    {
+      "id": "20260417-000000-welcome",
+      "difficulty": "easy",
+      "medium": "text",
+      "topic": "meta",
+      "question": "Welcome to Quiz Me. Is Ash ready to start quizzing Monte?",
+      "answerKey": "Yes.",
+      "userAnswer": "Yes.",
+      "result": "correct",
+      "thoughtfulnessScore": null,
+      "imagePath": null,
+      "grade": "First entry. The real questions start next.",
+      "createdAt": "2026-04-17T00:00:00-07:00"
+    }
+  ]
+}
