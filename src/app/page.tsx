@@ -1,5 +1,4 @@
 import { getAllUsers, getUser } from "@/lib/users";
-import { UserSwitcher } from "@/components/UserSwitcher";
 import { UserDashboard } from "@/components/UserDashboard";
 import { BrandBar } from "@/components/BrandBar";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -22,7 +21,6 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       <BrandBar />
-      <UserSwitcher users={users} activeUsername="monte" />
 
       <Hero
         users={users.length}
@@ -30,7 +28,9 @@ export default function Home() {
         totalTopics={topicSet.size}
       />
 
-      <HowItWorks />
+      <div id="how-it-works">
+        <HowItWorks />
+      </div>
 
       <div className="border-t border-[var(--color-border)]">
         <div className="flex-1">
