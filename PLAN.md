@@ -14,6 +14,8 @@ Four difficulty tiers stretch it from casual (easy = yes/no) to serious (xhard =
 
 ## Current State
 
+**Phase 1 shipped (2026-04-17)** — multi-user data model, editorial UI, `/users` page, Monte's log live as the canonical demo. Static only, no backend yet.
+
 - Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me)
 - Next.js 16 + Tailwind 4, static export, auto-deploys on push
 - `users.json` in repo is the source of truth (schema: `users.<username>.{displayName, claimedAt, password, inviteCode, interests, questions}`)
@@ -91,6 +93,8 @@ At deploy time, if KV is empty, import from `users.json`. Skill continues to wri
 ## Phases
 
 ### Phase 2 (next): Backend foundation — auth, API, live demo
+
+**Starts with a spec** (`specs/phase-2-backend.md`) to lock API contracts, KV key layout, cookie format, Claude prompts, rate-limit strategy, and guest-vs-authed branching. Then build in one go.
 
 **This unlocks everything interactive. Ships Su's first real quiz AND the homepage demo.**
 
