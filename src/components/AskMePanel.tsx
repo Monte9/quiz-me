@@ -80,7 +80,13 @@ function errMsg(e: unknown): string {
   return "something went wrong";
 }
 
-export function AskMePanel({ interests }: { interests: Interest[] }) {
+export function AskMePanel({
+  username,
+  interests,
+}: {
+  username: string;
+  interests: Interest[];
+}) {
   const router = useRouter();
   const [state, setState] = useState<State>({ kind: "idle" });
   const [answer, setAnswer] = useState("");
@@ -99,6 +105,7 @@ export function AskMePanel({ interests }: { interests: Interest[] }) {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          username,
           difficulty,
           topic: topic || undefined,
         }),
@@ -139,6 +146,7 @@ export function AskMePanel({ interests }: { interests: Interest[] }) {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          username,
           questionId: prev.questionId,
           userAnswer: payloadAnswer,
         }),

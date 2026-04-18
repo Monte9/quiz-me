@@ -27,7 +27,7 @@ export default async function Home() {
 
       <Hero />
 
-      <AskMePanel interests={monte.interests} />
+      <AskMePanel username={monte.username} interests={monte.interests} />
 
       {recent.length > 0 && (
         <section className="mx-auto w-full max-w-6xl px-6 pb-16">

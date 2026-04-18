@@ -5,9 +5,8 @@ import { callJSON } from "@/lib/claude";
 import { gradingPrompt } from "@/lib/prompts";
 import type { Difficulty, Result } from "@/lib/users";
 
-const USERNAME = "monte";
-
 const bodySchema = z.object({
+  username: z.string().min(1).regex(/^[a-z0-9_-]+$/, "invalid username"),
   questionId: z.string().min(1),
   userAnswer: z.string().optional().default(""),
 });
@@ -33,11 +32,11 @@ export async function POST(req: Request) {
   const parsed = bodySchema.safeParse(rawBody);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "questionId required" },
+      { error: parsed.error.issues[0]?.message ?? "invalid body" },
       { status: 400 },
     );
   }
-  const { questionId, userAnswer: userAnswerRaw } = parsed.data;
+  const { username, questionId, userAnswer: userAnswerRaw } = parsed.data;
   const userAnswer = userAnswerRaw.trim();
 
   const rows = await sql`
@@ -48,7 +47,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "question not found" }, { status: 404 });
   }
   const q = rows[0];
-  if (q.username !== USERNAME) {
+  if (q.username !== username) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   if (q.status !== "pending") {

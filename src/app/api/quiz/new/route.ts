@@ -11,9 +11,8 @@ import {
   slugify,
 } from "@/lib/quiz";
 
-const USERNAME = "monte";
-
 const bodySchema = z.object({
+  username: z.string().min(1).regex(/^[a-z0-9_-]+$/, "invalid username"),
   difficulty: difficultySchema.optional(),
   topic: z.string().optional(),
 });
@@ -35,13 +34,13 @@ export async function POST(req: Request) {
   const parsed = bodySchema.safeParse(rawBody);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "difficulty must be easy|medium|hard|xhard" },
+      { error: parsed.error.issues[0]?.message ?? "invalid body" },
       { status: 400 },
     );
   }
-  const { difficulty = "medium", topic: preferred = null } = parsed.data;
+  const { username, difficulty = "medium", topic: preferred = null } = parsed.data;
 
-  const ctx = await loadQuizContext(USERNAME);
+  const ctx = await loadQuizContext(username);
   if (!ctx) return NextResponse.json({ error: "user not found" }, { status: 404 });
   if (ctx.interests.length === 0) {
     return NextResponse.json(
@@ -79,7 +78,7 @@ export async function POST(req: Request) {
       status, created_at, graded_at
     )
     values (
-      ${id}, ${USERNAME}, ${difficulty}, 'text', ${topic},
+      ${id}, ${username}, ${difficulty}, 'text', ${topic},
       ${gen.question}, ${gen.answerKey},
       null, null, null, null, null,
       'pending', ${now.toISOString()}, null
