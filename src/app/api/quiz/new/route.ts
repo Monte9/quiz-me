@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { sql } from "@/lib/db";
 import { callJSON } from "@/lib/claude";
 import { generationPrompt } from "@/lib/prompts";
 import {
+  difficultySchema,
   idPrefix,
-  isDifficulty,
   loadQuizContext,
   pickTopic,
   slugify,
@@ -12,32 +13,33 @@ import {
 
 const USERNAME = "monte";
 
-interface NewBody {
-  difficulty?: unknown;
-  topic?: unknown;
-}
+const bodySchema = z.object({
+  difficulty: difficultySchema.optional(),
+  topic: z.string().optional(),
+});
 
-interface GenOutput {
-  question: string;
-  answerKey: string;
-  slug: string;
-}
+const genOutputSchema = z.object({
+  question: z.string().min(1),
+  answerKey: z.string().min(1),
+  slug: z.string().optional().default(""),
+});
 
 export async function POST(req: Request) {
-  let body: NewBody;
+  let rawBody: unknown;
   try {
-    body = (await req.json()) as NewBody;
+    rawBody = await req.json();
   } catch {
     return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
   }
 
-  const difficulty = body.difficulty ?? "medium";
-  if (!isDifficulty(difficulty)) {
+  const parsed = bodySchema.safeParse(rawBody);
+  if (!parsed.success) {
     return NextResponse.json(
       { error: "difficulty must be easy|medium|hard|xhard" },
       { status: 400 },
     );
   }
+  const { difficulty = "medium", topic: preferred = null } = parsed.data;
 
   const ctx = await loadQuizContext(USERNAME);
   if (!ctx) return NextResponse.json({ error: "user not found" }, { status: 404 });
@@ -48,26 +50,23 @@ export async function POST(req: Request) {
     );
   }
 
-  const preferred = typeof body.topic === "string" ? body.topic : null;
   const topic = pickTopic(ctx.interests, ctx.recentTopics, preferred);
   if (!topic) {
     return NextResponse.json({ error: "could not pick topic" }, { status: 500 });
   }
 
-  let gen: GenOutput;
+  let gen: z.infer<typeof genOutputSchema>;
   try {
     const { system, user } = generationPrompt(difficulty, topic, ctx.recentTopics);
-    gen = await callJSON<GenOutput>({ system, user, maxTokens: 1500 });
+    gen = await callJSON({
+      system,
+      user,
+      schema: genOutputSchema,
+      maxTokens: 1500,
+    });
   } catch (err) {
     console.error("claude generation failed", err);
     return NextResponse.json({ error: "generation failed" }, { status: 502 });
-  }
-
-  if (!gen.question || !gen.answerKey) {
-    return NextResponse.json(
-      { error: "generation returned incomplete payload" },
-      { status: 502 },
-    );
   }
 
   const now = new Date();

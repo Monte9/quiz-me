@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { sql } from "@/lib/db";
 import { callJSON } from "@/lib/claude";
 import { gradingPrompt } from "@/lib/prompts";
@@ -6,27 +7,37 @@ import type { Difficulty, Result } from "@/lib/users";
 
 const USERNAME = "monte";
 
-interface GradeBody {
-  questionId?: unknown;
-  userAnswer?: unknown;
-}
+const bodySchema = z.object({
+  questionId: z.string().min(1),
+  userAnswer: z.string().optional().default(""),
+});
 
-type EasyMedHardGrade = { result: Result; grade: string };
-type XHardGrade = { thoughtfulnessScore: number; grade: string };
+const easyMedHardGradeSchema = z.object({
+  result: z.enum(["correct", "partial", "wrong"]),
+  grade: z.string().min(1),
+});
+
+const xhardGradeSchema = z.object({
+  thoughtfulnessScore: z.number(),
+  grade: z.string().min(1),
+});
 
 export async function POST(req: Request) {
-  let body: GradeBody;
+  let rawBody: unknown;
   try {
-    body = (await req.json()) as GradeBody;
+    rawBody = await req.json();
   } catch {
     return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
   }
 
-  if (typeof body.questionId !== "string") {
-    return NextResponse.json({ error: "questionId required" }, { status: 400 });
+  const parsed = bodySchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "questionId required" },
+      { status: 400 },
+    );
   }
-  const questionId = body.questionId;
-  const userAnswerRaw = typeof body.userAnswer === "string" ? body.userAnswer : "";
+  const { questionId, userAnswer: userAnswerRaw } = parsed.data;
   const userAnswer = userAnswerRaw.trim();
 
   const rows = await sql`
@@ -77,7 +88,12 @@ export async function POST(req: Request) {
     );
 
     if (difficulty === "xhard") {
-      const graded = await callJSON<XHardGrade>({ system, user, maxTokens: 600 });
+      const graded = await callJSON({
+        system,
+        user,
+        schema: xhardGradeSchema,
+        maxTokens: 600,
+      });
       const score = Math.max(1, Math.min(5, Math.round(graded.thoughtfulnessScore)));
       await sql`
         update questions set
@@ -97,15 +113,13 @@ export async function POST(req: Request) {
       });
     }
 
-    const graded = await callJSON<EasyMedHardGrade>({
+    const graded = await callJSON({
       system,
       user,
+      schema: easyMedHardGradeSchema,
       maxTokens: 400,
     });
-    const result: Result =
-      graded.result === "correct" || graded.result === "partial" || graded.result === "wrong"
-        ? graded.result
-        : "wrong";
+    const result: Result = graded.result;
     await sql`
       update questions set
         user_answer = ${userAnswer},

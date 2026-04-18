@@ -2,6 +2,7 @@ import { User, computeStats, sortQuestionsByDate } from "@/lib/users";
 import { InterestChips } from "./InterestChips";
 import { StatBar } from "./StatBar";
 import { QuestionCard } from "./QuestionCard";
+import { AskMePanel } from "./AskMePanel";
 
 export function UserDashboard({
   user,
@@ -54,6 +55,10 @@ export function UserDashboard({
           )}
         </div>
       </header>
+
+      {user.username === "monte" && (
+        <AskMePanel interests={user.interests} />
+      )}
 
       <main className="mx-auto max-w-6xl px-6 pb-16">
         {questions.length === 0 ? (

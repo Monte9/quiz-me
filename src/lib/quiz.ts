@@ -1,11 +1,9 @@
+import { z } from "zod";
 import { sql } from "@/lib/db";
-import type { Difficulty, Interest } from "@/lib/users";
+import type { Interest } from "@/lib/users";
 
-export const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard", "xhard"];
-
-export function isDifficulty(v: unknown): v is Difficulty {
-  return typeof v === "string" && (DIFFICULTIES as string[]).includes(v);
-}
+export const difficultySchema = z.enum(["easy", "medium", "hard", "xhard"]);
+export const DIFFICULTIES = difficultySchema.options;
 
 export function idPrefix(d: Date = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
