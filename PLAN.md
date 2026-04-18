@@ -26,8 +26,8 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 - ✅ **Step 1** — Neon Postgres foundation: `users`/`questions` tables + index, `src/lib/db.ts`, `pnpm db:migrate` + `db:seed`, seeded from `users.json`
 - ✅ **Step 2** — Read path swap: dropped `output: "export"`, server-mode deploy, `src/lib/users.ts` reads from Postgres
 - ✅ **Step 3** — API routes: `POST /api/quiz/new` + `POST /api/quiz/grade` live on Vercel, `src/lib/claude.ts` + `src/lib/prompts.ts` + `src/lib/quiz.ts`
-- ✅ **Step 4** — `<AskMePanel />` + Zod hardening shipped. Homepage rewritten: AskMePanel is the CTA under hero, 3 most recent questions below, new `Features` trio, `Hero` rewritten for trivia-lover ICP ("The quiz that keeps up with you"). Yes/No buttons for easy. `callJSON<T>` now schema-validates Claude output. **Polish pass pending**: loading-state skeleton size, result pill placement, top-align panel, topic display names, hero→panel spacing.
-- ⬜ **Step 5** — Skill dual-write: teach SKILL.md to mirror into Postgres alongside `users.json` commit
+- ✅ **Step 4** — `<AskMePanel />` + Zod hardening shipped. Homepage rewritten: AskMePanel is the CTA under hero, 3 most recent questions below, new `Features` trio, `Hero` rewritten for trivia-lover ICP ("The quiz that keeps up with you"). Yes/No buttons for easy. `callJSON<T>` now schema-validates Claude output. Polish pass shipped: top-aligned panel (no more bloated idle state), beefier loading skeleton, result pill moved next to "Your answer," hero→panel spacing tuned for above-the-fold.
+- ⬜ **Step 5** — Skill dual-write: teach SKILL.md to mirror into Postgres alongside `users.json` commit. Also: add `displayName` to interests JSON + surface in UI (topic normalization).
 
 ---
 
@@ -55,16 +55,11 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 
 **Spec:** [specs/phase-2-backend.md](specs/phase-2-backend.md)
 
-Steps 1–4 shipped. Remaining:
+Steps 1–4 (including polish) shipped. Remaining:
 
-- **Step 4 polish** (do first — small pass based on live testing)
-  - Loading state: bigger skeleton so it fills the card
-  - Revealed state: move result pill next to "YOUR ANSWER" label (not top header)
-  - Top-align panel content; drop `justify-center` so closed-topics state isn't bloated
-  - Tune hero→AskMePanel spacing so both land above the fold cleanly
-  - Topic display names (see Open Questions for normalization approach)
-- **Step 5 — Skill dual-write**
-  - Skill continues writing `users.json` + commits, **and** inserts into Postgres via direct connection (skill gets `DATABASE_URL` in local env)
+- **Step 5 — Skill dual-write + topic display names**
+  - Skill writes `users.json` + commits, **and** inserts into Postgres via direct connection (skill gets `DATABASE_URL` in local env)
+  - Add `displayName` field to interests JSON entries; UI falls back to title-cased slug when missing (see Open Questions for why this over a `topics` table)
   - Verify: skill-generated question shows on the site immediately, and in git history
 
 **Exit:** Land on quizmenexus.vercel.app → pick difficulty → answer → see Ash's grade → refresh → it's in your log. Skill-generated questions show up the same way.

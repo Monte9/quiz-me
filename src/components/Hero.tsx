@@ -1,6 +1,6 @@
 export function Hero() {
   return (
-    <section className="mx-auto max-w-5xl px-6 pt-24 pb-14 text-center sm:pt-28">
+    <section className="mx-auto max-w-5xl px-6 pt-20 pb-10 text-center sm:pt-24 sm:pb-12">
       <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-3 py-1 text-[0.7rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
         For trivia nerds
       </div>

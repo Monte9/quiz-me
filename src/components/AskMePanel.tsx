@@ -175,7 +175,7 @@ export function AskMePanel({ interests }: { interests: Interest[] }) {
 
   return (
     <section className="mx-auto mb-10 max-w-3xl px-4">
-      <div className="flex min-h-[360px] flex-col justify-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-raised)] p-6 shadow-[0_0_40px_var(--color-accent-glow)] sm:p-8">
+      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-raised)] p-6 shadow-[0_0_40px_var(--color-accent-glow)] sm:p-8">
         {state.kind === "idle" && (
           <div>
             <div className="mb-4 flex items-center justify-between gap-3">
@@ -261,13 +261,24 @@ export function AskMePanel({ interests }: { interests: Interest[] }) {
         )}
 
         {state.kind === "loading" && (
-          <div className="py-8 text-center">
-            <div className="mb-3 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+          <div aria-busy="true">
+            <div className="mb-4 flex items-center gap-2">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-accent)]" />
-              Ash is writing a question…
+              <span className="text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+                Ash is writing a question…
+              </span>
             </div>
-            <div className="mx-auto h-4 w-2/3 animate-pulse rounded bg-[var(--color-surface)]" />
-            <div className="mx-auto mt-3 h-4 w-1/2 animate-pulse rounded bg-[var(--color-surface)]" />
+
+            <div className="mb-2 h-7 w-5/6 animate-pulse rounded bg-[var(--color-surface)] sm:h-8" />
+            <div className="mb-2 h-7 w-3/4 animate-pulse rounded bg-[var(--color-surface)] sm:h-8" />
+            <div className="mb-6 h-7 w-1/2 animate-pulse rounded bg-[var(--color-surface)] sm:h-8" />
+
+            <div className="h-24 w-full animate-pulse rounded-lg bg-[var(--color-surface)]" />
+
+            <div className="mt-4 flex gap-2">
+              <div className="h-10 w-24 animate-pulse rounded-full bg-[var(--color-surface)]" />
+              <div className="h-10 w-20 animate-pulse rounded-full bg-[var(--color-surface)]" />
+            </div>
           </div>
         )}
 
@@ -380,33 +391,43 @@ export function AskMePanel({ interests }: { interests: Interest[] }) {
               <span className="text-xs font-medium text-[var(--color-text-dim)]">
                 {state.topic}
               </span>
-              {state.thoughtfulnessScore !== null ? (
-                <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-accent-glow)] px-2 py-0.5 text-xs font-semibold text-[var(--color-accent)]">
-                  {state.thoughtfulnessScore}/5 thoughtfulness
-                </span>
-              ) : state.result ? (
-                <span
-                  className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-semibold ${resultStyles[state.result]}`}
-                >
-                  {resultLabels[state.result]}
-                </span>
-              ) : null}
             </div>
 
             <p className="font-display mb-4 text-xl leading-snug font-semibold text-[var(--color-text)] sm:text-2xl">
               {state.question}
             </p>
 
-            {state.userAnswer && (
+            {state.userAnswer ? (
               <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/60 p-4">
-                <div className="mb-1 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
-                  Your answer
+                <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+                    Your answer
+                  </div>
+                  {state.thoughtfulnessScore !== null ? (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-accent-glow)] px-2 py-0.5 text-[0.7rem] font-semibold text-[var(--color-accent)]">
+                      {state.thoughtfulnessScore}/5 thoughtfulness
+                    </span>
+                  ) : state.result ? (
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold uppercase ${resultStyles[state.result]}`}
+                    >
+                      {resultLabels[state.result]}
+                    </span>
+                  ) : null}
                 </div>
                 <p className="text-sm whitespace-pre-wrap text-[var(--color-text-dim)]">
                   {state.userAnswer}
                 </p>
               </div>
-            )}
+            ) : state.result ? (
+              <div className="mb-4">
+                <span
+                  className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold uppercase ${resultStyles[state.result]}`}
+                >
+                  {resultLabels[state.result]}
+                </span>
+              </div>
+            ) : null}
 
             {state.grade && (
               <div className="mb-4 rounded-lg border border-[var(--color-accent-dim)]/40 bg-[var(--color-accent-wash)] p-4">
