@@ -175,7 +175,7 @@ export function AskMePanel({ interests }: { interests: Interest[] }) {
 
   return (
     <section className="mx-auto mb-10 max-w-3xl px-4">
-      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-raised)] p-6 shadow-[0_0_40px_var(--color-accent-glow)] sm:p-8">
+      <div className="flex min-h-[360px] flex-col justify-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-raised)] p-6 shadow-[0_0_40px_var(--color-accent-glow)] sm:p-8">
         {state.kind === "idle" && (
           <div>
             <div className="mb-4 flex items-center justify-between gap-3">

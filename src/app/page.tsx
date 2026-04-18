@@ -4,7 +4,7 @@ import { AskMePanel } from "@/components/AskMePanel";
 import { BrandBar } from "@/components/BrandBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Hero } from "@/components/Hero";
-import { HowItWorks } from "@/components/HowItWorks";
+import { Features } from "@/components/Features";
 import { QuestionCard } from "@/components/QuestionCard";
 import { notFound } from "next/navigation";
 
@@ -55,8 +55,8 @@ export default async function Home() {
         </section>
       )}
 
-      <div id="how-it-works" className="border-t border-[var(--color-border)]">
-        <HowItWorks />
+      <div className="border-t border-[var(--color-border)]">
+        <Features />
       </div>
 
       <SiteFooter />
