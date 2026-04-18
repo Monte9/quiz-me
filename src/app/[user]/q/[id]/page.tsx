@@ -41,7 +41,7 @@ export default async function QuestionPage({
   if (!q) notFound();
 
   const showScore = q.difficulty === "xhard" && q.thoughtfulnessScore !== null;
-  const backHref = username === "monte" ? "/" : `/${username}`;
+  const backHref = `/${username}`;
 
   return (
     <div className="flex min-h-screen flex-col">

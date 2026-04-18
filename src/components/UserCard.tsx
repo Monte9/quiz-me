@@ -3,8 +3,8 @@ import { User, computeStats } from "@/lib/users";
 
 export function UserCard({ user }: { user: User }) {
   const stats = computeStats(user);
-  const claimed = user.claimedAt !== null || user.username === "monte";
-  const href = user.username === "monte" ? "/" : `/${user.username}`;
+  const claimed = user.claimedAt !== null;
+  const href = `/${user.username}`;
   const initial = user.displayName.slice(0, 1).toUpperCase();
   const lastAsk = user.questions[user.questions.length - 1]?.createdAt;
 
