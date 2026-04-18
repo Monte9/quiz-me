@@ -4,7 +4,7 @@ import { AskMePanel } from "@/components/AskMePanel";
 import { BrandBar } from "@/components/BrandBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Hero } from "@/components/Hero";
-import { QuestionCard } from "@/components/QuestionCard";
+import { QuestionList } from "@/components/QuestionList";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -42,15 +42,7 @@ export default async function Home() {
               See all →
             </Link>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {recent.map(({ username, question }) => (
-              <QuestionCard
-                key={question.id}
-                username={username}
-                q={question}
-              />
-            ))}
-          </div>
+          <QuestionList items={recent} />
         </section>
       )}
 
