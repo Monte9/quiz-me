@@ -104,16 +104,11 @@ export async function getUser(username: string): Promise<User | null> {
   return mapUser(userRows[0], questionRows.map(mapQuestion));
 }
 
-export async function getAllQuestions(): Promise<
-  { username: string; question: Question }[]
-> {
+export async function getAllQuestions(): Promise<Question[]> {
   const rows = await sql`
     select * from questions order by created_at desc
   `;
-  return rows.map((row) => ({
-    username: row.username as string,
-    question: mapQuestion(row),
-  }));
+  return rows.map(mapQuestion);
 }
 
 export async function getAllTopics(): Promise<string[]> {
@@ -124,14 +119,16 @@ export async function getAllTopics(): Promise<string[]> {
 }
 
 export async function getQuestionById(
-  username: string,
   id: string,
-): Promise<Question | null> {
+): Promise<{ username: string; question: Question } | null> {
   const rows = await sql`
-    select * from questions where username = ${username} and id = ${id}
+    select * from questions where id = ${id}
   `;
   if (rows.length === 0) return null;
-  return mapQuestion(rows[0]);
+  return {
+    username: rows[0].username as string,
+    question: mapQuestion(rows[0]),
+  };
 }
 
 export interface UserStats {

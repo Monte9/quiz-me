@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  async redirects() {
+    return [
+      {
+        source: "/:user/q/:id",
+        destination: "/questions/:id",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

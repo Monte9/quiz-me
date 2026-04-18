@@ -39,10 +39,10 @@ export default async function QuestionsPage({
 
   let filtered = all;
   if (difficulty) {
-    filtered = filtered.filter((x) => x.question.difficulty === difficulty);
+    filtered = filtered.filter((q) => q.difficulty === difficulty);
   }
   if (topic) {
-    filtered = filtered.filter((x) => x.question.topic === topic);
+    filtered = filtered.filter((q) => q.topic === topic);
   }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -57,7 +57,7 @@ export default async function QuestionsPage({
   const filteredTopics = new Set<string>();
   let gradedCount = 0;
   let correctCount = 0;
-  for (const { question: q } of filtered) {
+  for (const q of filtered) {
     filteredTopics.add(q.topic);
     if (q.result && q.result !== "skipped") {
       gradedCount++;

@@ -32,10 +32,8 @@ export default async function Home() {
   ];
 
   const recent = users
-    .flatMap((u) =>
-      u.questions.map((q) => ({ username: u.username, question: q })),
-    )
-    .sort((a, b) => b.question.createdAt.localeCompare(a.question.createdAt))
+    .flatMap((u) => u.questions)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 3);
 
   return (

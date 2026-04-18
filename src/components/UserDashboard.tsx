@@ -112,10 +112,7 @@ export function UserDashboard({
         )}
 
         <QuestionList
-          items={questions.map((q) => ({
-            username: user.username,
-            question: q,
-          }))}
+          items={questions}
           emptyMessage="No questions yet. Ash will ask soon."
         />
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getQuestionById } from "@/lib/users";
 import { BrandBar } from "@/components/BrandBar";
 import { BackButton } from "@/components/BackButton";
@@ -34,21 +35,21 @@ const resultLabels: Record<string, string> = {
 export default async function QuestionPage({
   params,
 }: {
-  params: Promise<{ user: string; id: string }>;
+  params: Promise<{ id: string }>;
 }) {
-  const { user: username, id } = await params;
-  const q = await getQuestionById(username, id);
-  if (!q) notFound();
+  const { id } = await params;
+  const hit = await getQuestionById(id);
+  if (!hit) notFound();
 
+  const { username, question: q } = hit;
   const showScore = q.difficulty === "xhard" && q.thoughtfulnessScore !== null;
-  const fallbackHref = `/${username}`;
 
   return (
     <div className="flex min-h-screen flex-col">
       <BrandBar compact />
       <article className="mx-auto w-full max-w-2xl flex-1 px-6 pt-12 pb-16">
         <BackButton
-          fallbackHref={fallbackHref}
+          fallbackHref="/questions"
           className="mb-8 inline-flex cursor-pointer items-center gap-1.5 text-sm text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
         >
           ← Back
@@ -68,6 +69,12 @@ export default async function QuestionPage({
               · image
             </span>
           )}
+          <Link
+            href={`/${username}`}
+            className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
+          >
+            · @{username}
+          </Link>
           <span className="ml-auto text-xs text-[var(--color-text-muted)]">
             {new Date(q.createdAt).toLocaleDateString(undefined, {
               month: "short",
@@ -141,7 +148,7 @@ export default async function QuestionPage({
 
       <footer className="border-t border-[var(--color-border)] py-8 text-center text-sm text-[var(--color-text-muted)]">
         <BackButton
-          fallbackHref={fallbackHref}
+          fallbackHref="/questions"
           className="cursor-pointer hover:text-[var(--color-accent)]"
         >
           ← Back

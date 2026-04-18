@@ -29,16 +29,10 @@ const resultLabels: Record<string, string> = {
   skipped: "Skipped",
 };
 
-export function QuestionCard({
-  username,
-  q,
-}: {
-  username: string;
-  q: Question;
-}) {
+export function QuestionCard({ q }: { q: Question }) {
   const showScore = q.difficulty === "xhard" && q.thoughtfulnessScore !== null;
   return (
-    <Link href={`/${username}/q/${q.id}`} className="group block">
+    <Link href={`/questions/${q.id}`} className="group block">
       <article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-raised)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--color-accent-dim)] hover:shadow-[0_0_0_1px_var(--color-accent-dim),0_12px_40px_var(--color-accent-glow)]">
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span
