@@ -269,16 +269,18 @@ export function AskMePanel({ interests }: { interests: Interest[] }) {
               </span>
             </div>
 
-            <div className="mb-3 h-9 w-5/6 animate-pulse rounded bg-[var(--color-border-strong)] sm:h-10" />
-            <div className="mb-3 h-9 w-3/4 animate-pulse rounded bg-[var(--color-border-strong)] sm:h-10" />
-            <div className="mb-6 h-9 w-2/5 animate-pulse rounded bg-[var(--color-border-strong)] sm:h-10" />
-
-            <div className="h-28 w-full animate-pulse rounded-lg bg-[var(--color-border-strong)]/70" />
-
-            <div className="mt-5 flex gap-2">
-              <div className="h-11 w-28 animate-pulse rounded-full bg-[var(--color-border-strong)]" />
-              <div className="h-11 w-20 animate-pulse rounded-full bg-[var(--color-border-strong)]/60" />
-            </div>
+            <div
+              className="shimmer mb-3 h-9 w-5/6 rounded sm:h-10"
+              style={{ animationDelay: "0s" }}
+            />
+            <div
+              className="shimmer mb-3 h-9 w-3/4 rounded sm:h-10"
+              style={{ animationDelay: "0.15s" }}
+            />
+            <div
+              className="shimmer h-9 w-2/5 rounded sm:h-10"
+              style={{ animationDelay: "0.3s" }}
+            />
           </div>
         )}
 
