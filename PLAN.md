@@ -14,19 +14,19 @@ Four difficulty tiers stretch it from casual (easy = yes/no) to serious (xhard =
 
 ## Current State
 
-Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me). Phase 1 shipped 2026-04-17; Phase 2.0 is mid-build (3 of 5 steps done).
+Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me). Phase 1 shipped 2026-04-17; Phase 2.0 is 4 of 5 steps done.
 
 **Phase 1 — shipped:**
 - Next.js 16 + Tailwind 4, Vercel auto-deploy, emerald-on-black editorial theme (Fraunces serif hero, number-forward stat blocks)
-- Pages: `/` (landing + Monte's log), `/users` (all users + join card), `/[user]` (dashboard or claim-stub), `/[user]/q/[id]` (question detail)
+- Pages: `/`, `/users`, `/[user]` (dashboard or claim-stub), `/[user]/q/[id]`
 - 2 users seeded (Monte claimed, Suvarcha unclaimed with invite `SU-CC23CA`), 11 interests, 1 real quiz
 - Writer skill at [ash-core/skills/quiz-me/SKILL.md](../ash-core/skills/quiz-me/SKILL.md) — writes `users.json` + commits
 
 **Phase 2.0 — in progress:**
-- ✅ **Step 1** — Neon Postgres foundation: `users`/`questions` tables + index, `src/lib/db.ts`, `pnpm db:migrate` + `db:seed` scripts, seeded from `users.json`
-- ✅ **Step 2** — Read path swap: dropped `output: "export"`, server-mode deploy, `src/lib/users.ts` reads from Postgres (users.json kept as git-tracked seed)
-- ✅ **Step 3** — API routes: `POST /api/quiz/new` + `POST /api/quiz/grade` live on Vercel, `src/lib/claude.ts` (lazy-init) + `src/lib/prompts.ts` (per-difficulty) + `src/lib/quiz.ts` (topic picker, id/slug). First curl-driven quiz: `20260417-165935-kitchen-both-sides` (pickleball).
-- ⬜ **Step 4** — `<AskMePanel />` client UI on `/` + `/monte` (Idle → Loading → Asking → Grading → Revealed) + Zod hardening pass (request bodies + Claude output schemas, replace `isDifficulty` guard)
+- ✅ **Step 1** — Neon Postgres foundation: `users`/`questions` tables + index, `src/lib/db.ts`, `pnpm db:migrate` + `db:seed`, seeded from `users.json`
+- ✅ **Step 2** — Read path swap: dropped `output: "export"`, server-mode deploy, `src/lib/users.ts` reads from Postgres
+- ✅ **Step 3** — API routes: `POST /api/quiz/new` + `POST /api/quiz/grade` live on Vercel, `src/lib/claude.ts` + `src/lib/prompts.ts` + `src/lib/quiz.ts`
+- ✅ **Step 4** — `<AskMePanel />` + Zod hardening shipped. Homepage rewritten: AskMePanel is the CTA under hero, 3 most recent questions below, new `Features` trio, `Hero` rewritten for trivia-lover ICP ("The quiz that keeps up with you"). Yes/No buttons for easy. `callJSON<T>` now schema-validates Claude output. **Polish pass pending**: loading-state skeleton size, result pill placement, top-align panel, topic display names, hero→panel spacing.
 - ⬜ **Step 5** — Skill dual-write: teach SKILL.md to mirror into Postgres alongside `users.json` commit
 
 ---
@@ -55,17 +55,19 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 
 **Spec:** [specs/phase-2-backend.md](specs/phase-2-backend.md)
 
-Steps 1–3 shipped. Remaining:
+Steps 1–4 shipped. Remaining:
 
-- **Step 4 — `<AskMePanel />` + Zod**
-  - Client component at `src/components/AskMePanel.tsx`, wired into `/` and `/monte`
-  - States: Idle (`[Easy] [Medium] [Hard]` buttons + `xhard` link + topic disclosure) → Loading → Asking (question in Fraunces + textarea + Submit/Skip) → Grading → Revealed (result pill + one-line grade + "Show answer key" + "Ask another")
-  - `pnpm add zod`; schema-validate NewBody/GradeBody + GenOutput/EasyMedHardGrade/XHardGrade; refactor `callJSON<T>` to accept a zod schema; drop manual `isDifficulty` guard
+- **Step 4 polish** (do first — small pass based on live testing)
+  - Loading state: bigger skeleton so it fills the card
+  - Revealed state: move result pill next to "YOUR ANSWER" label (not top header)
+  - Top-align panel content; drop `justify-center` so closed-topics state isn't bloated
+  - Tune hero→AskMePanel spacing so both land above the fold cleanly
+  - Topic display names (see Open Questions for normalization approach)
 - **Step 5 — Skill dual-write**
   - Skill continues writing `users.json` + commits, **and** inserts into Postgres via direct connection (skill gets `DATABASE_URL` in local env)
   - Verify: skill-generated question shows on the site immediately, and in git history
 
-**Exit:** Land on quizmenexus.vercel.app → click "Ask me medium" → answer → see Ash's grade → refresh → it's in your log. Skill-generated questions show up the same way.
+**Exit:** Land on quizmenexus.vercel.app → pick difficulty → answer → see Ash's grade → refresh → it's in your log. Skill-generated questions show up the same way.
 
 ### Phase 2.1: Auth + multi-user writes
 
@@ -115,7 +117,7 @@ Steps 1–3 shipped. Remaining:
 
 - **xhard thoughtfulness rubric** — what separates 3 from 4 from 5? Short scoring guide needed in SKILL.md before first xhard runs.
 - **Image-response questions** — for `medium=image`, does the user upload a drawing/photo, or does Ash generate and ask about it? Decide before Phase 4.
-- **Difficulty/medium picker UX** — three default buttons (easy/medium/hard) + settings disclosure for topic/xhard feels right; validate once Step 4 ships.
+- **Topic normalization** — how do `pickleball` and `pickleball_tips` collapse to one underlying topic with a nice display name? Options: (a) new `topics(slug pk, display_name)` table with `questions.topic` as FK, (b) `display_name` on the `interests` JSON entries and derive from there. Leaning (b) for Phase 2.x — defer (a) until many-to-one actually matters.
 - **Suvarcha's interests** — claim flow asks for 3–5 interests right after password set.
 
 ---
