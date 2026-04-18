@@ -1,6 +1,6 @@
 import { getQuestionById } from "@/lib/users";
 import { BrandBar } from "@/components/BrandBar";
-import Link from "next/link";
+import { BackButton } from "@/components/BackButton";
 import { notFound } from "next/navigation";
 
 const difficultyStyles: Record<string, string> = {
@@ -41,18 +41,18 @@ export default async function QuestionPage({
   if (!q) notFound();
 
   const showScore = q.difficulty === "xhard" && q.thoughtfulnessScore !== null;
-  const backHref = `/${username}`;
+  const fallbackHref = `/${username}`;
 
   return (
     <div className="flex min-h-screen flex-col">
       <BrandBar />
       <article className="mx-auto w-full max-w-2xl flex-1 px-6 pt-12 pb-16">
-        <Link
-          href={backHref}
-          className="mb-8 inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
+        <BackButton
+          fallbackHref={fallbackHref}
+          className="mb-8 inline-flex cursor-pointer items-center gap-1.5 text-sm text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
         >
           ← Back
-        </Link>
+        </BackButton>
 
         <div className="mb-6 flex flex-wrap items-center gap-2">
           <span
@@ -140,9 +140,12 @@ export default async function QuestionPage({
       </article>
 
       <footer className="border-t border-[var(--color-border)] py-8 text-center text-sm text-[var(--color-text-muted)]">
-        <Link href={backHref} className="hover:text-[var(--color-accent)]">
-          ← Back to {username === "monte" ? "Monte" : username}
-        </Link>
+        <BackButton
+          fallbackHref={fallbackHref}
+          className="cursor-pointer hover:text-[var(--color-accent)]"
+        >
+          ← Back
+        </BackButton>
       </footer>
     </div>
   );
