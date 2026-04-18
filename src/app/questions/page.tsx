@@ -88,7 +88,7 @@ export default async function QuestionsPage({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <BrandBar />
+      <BrandBar compact />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 pt-10 pb-16">
         <div className="mb-10 text-center">

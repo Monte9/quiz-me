@@ -23,7 +23,7 @@ export default async function UserPage({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <BrandBar />
+      <BrandBar compact />
 
       <div className="mx-auto w-full max-w-6xl px-6 pt-6">
         <Link

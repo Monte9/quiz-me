@@ -45,7 +45,7 @@ export default async function QuestionPage({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <BrandBar />
+      <BrandBar compact />
       <article className="mx-auto w-full max-w-2xl flex-1 px-6 pt-12 pb-16">
         <BackButton
           fallbackHref={fallbackHref}
