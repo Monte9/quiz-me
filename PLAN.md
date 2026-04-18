@@ -14,7 +14,7 @@ Four difficulty tiers stretch it from casual (easy = yes/no) to serious (xhard =
 
 ## Current State
 
-Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me). Phase 1 shipped 2026-04-17; Phase 2.0 is 4 of 5 steps done.
+Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me). Phase 1 shipped 2026-04-17; **Phase 2.0 shipped 2026-04-17**.
 
 **Phase 1 — shipped:**
 - Next.js 16 + Tailwind 4, Vercel auto-deploy, emerald-on-black editorial theme (Fraunces serif hero, number-forward stat blocks)
@@ -22,12 +22,12 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 - 2 users seeded (Monte claimed, Suvarcha unclaimed with invite `SU-CC23CA`), 11 interests, 1 real quiz
 - Writer skill at [ash-core/skills/quiz-me/SKILL.md](../ash-core/skills/quiz-me/SKILL.md) — writes `users.json` + commits
 
-**Phase 2.0 — in progress:**
-- ✅ **Step 1** — Neon Postgres foundation: `users`/`questions` tables + index, `src/lib/db.ts`, `pnpm db:migrate` + `db:seed`, seeded from `users.json`
-- ✅ **Step 2** — Read path swap: dropped `output: "export"`, server-mode deploy, `src/lib/users.ts` reads from Postgres
-- ✅ **Step 3** — API routes: `POST /api/quiz/new` + `POST /api/quiz/grade` live on Vercel, `src/lib/claude.ts` + `src/lib/prompts.ts` + `src/lib/quiz.ts`
-- ✅ **Step 4** — `<AskMePanel />` + Zod hardening shipped. Homepage rewritten: AskMePanel is the CTA under hero, 3 most recent questions below, new `Features` trio, `Hero` rewritten for trivia-lover ICP ("The quiz that keeps up with you"). Yes/No buttons for easy. `callJSON<T>` now schema-validates Claude output. Polish pass shipped: top-aligned panel (no more bloated idle state), beefier loading skeleton, result pill moved next to "Your answer," hero→panel spacing tuned for above-the-fold.
-- ⬜ **Step 5** — Skill dual-write: teach SKILL.md to mirror into Postgres alongside `users.json` commit. Also: add `displayName` to interests JSON + surface in UI (topic normalization).
+**Phase 2.0 — shipped:**
+- **Step 1** — Neon Postgres foundation: `users`/`questions` tables + index, `src/lib/db.ts`, `pnpm db:migrate` + `db:seed`, seeded from `users.json`
+- **Step 2** — Read path swap: dropped `output: "export"`, server-mode deploy, `src/lib/users.ts` reads from Postgres
+- **Step 3** — API routes: `POST /api/quiz/new` + `POST /api/quiz/grade` live on Vercel, `src/lib/claude.ts` + `src/lib/prompts.ts` + `src/lib/quiz.ts`
+- **Step 4** — `<AskMePanel />` + Zod hardening shipped. Homepage: AskMePanel as primary CTA under hero, 3 most recent questions below, marketing section removed (bare bones, circle back). Yes/No buttons for easy. `callJSON<T>` schema-validates Claude output. Polish pass: top-aligned panel, shimmer loading skeleton with staggered delays, consistent card width across states (`w-full` fix), result pill next to "Your answer," hero→panel padding tuned for above-the-fold.
+- **Step 5 dropped** — decided against dual-write. Skill continues manual `users.json` commits; Postgres is the runtime DB; `db:seed` rebuilds from `users.json` on demand. Simpler.
 
 ---
 
@@ -43,7 +43,7 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 | 6 | Claude API | Serverless only; `ANTHROPIC_API_KEY` in Vercel env; never client-side |
 | 7 | Voice | Phase 3 via Web Speech API. v1 = text + Y/N buttons. |
 | 8 | Rate limit | 20 quizzes/user/day (added in Phase 2.1 with auth) |
-| 9 | Skill writes | Dual-write: `users.json` (commit) AND Postgres (direct via `DATABASE_URL`) |
+| 9 | Skill writes | Skill commits to `users.json` only. Postgres is the runtime DB; `db:seed` rebuilds from `users.json` when needed. No dual-write. |
 | 10 | LLM SDK | `@anthropic-ai/sdk` direct. Vercel AI SDK skipped — overkill for two `messages.create` calls, no streaming/tools. |
 | 11 | Validation | **Zod** for API bodies + Claude output schemas (folded into Step 4) |
 
@@ -51,20 +51,7 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 
 ## Phases
 
-### Phase 2.0 (active): Web quiz flow — Monte only, no auth
-
-**Spec:** [specs/phase-2-backend.md](specs/phase-2-backend.md)
-
-Steps 1–4 (including polish) shipped. Remaining:
-
-- **Step 5 — Skill dual-write + topic display names**
-  - Skill writes `users.json` + commits, **and** inserts into Postgres via direct connection (skill gets `DATABASE_URL` in local env)
-  - Add `displayName` field to interests JSON entries; UI falls back to title-cased slug when missing (see Open Questions for why this over a `topics` table)
-  - Verify: skill-generated question shows on the site immediately, and in git history
-
-**Exit:** Land on quizmenexus.vercel.app → pick difficulty → answer → see Ash's grade → refresh → it's in your log. Skill-generated questions show up the same way.
-
-### Phase 2.1: Auth + multi-user writes
+### Phase 2.1 (active): Auth + multi-user writes
 
 - `POST /api/users/claim`, `/login`, `/logout`; HMAC-signed cookie sessions, middleware attaches `user`
 - Gate `/api/quiz/*` on session
@@ -95,6 +82,7 @@ Steps 1–4 (including polish) shipped. Remaining:
 
 ## Backlog
 
+- **Topic display names** — add `displayName` field to interests JSON entries; UI falls back to title-cased slug when missing. Cosmetic polish; not blocking anything.
 - **Shared questions** — "question of the day" seen by all users; compare answers
 - **Admin panel** — Monte generates invites from web UI (skill-only today)
 - **Topic hierarchy** — `history/roman`, `ai/transformers`
@@ -112,7 +100,6 @@ Steps 1–4 (including polish) shipped. Remaining:
 
 - **xhard thoughtfulness rubric** — what separates 3 from 4 from 5? Short scoring guide needed in SKILL.md before first xhard runs.
 - **Image-response questions** — for `medium=image`, does the user upload a drawing/photo, or does Ash generate and ask about it? Decide before Phase 4.
-- **Topic normalization** — how do `pickleball` and `pickleball_tips` collapse to one underlying topic with a nice display name? Options: (a) new `topics(slug pk, display_name)` table with `questions.topic` as FK, (b) `display_name` on the `interests` JSON entries and derive from there. Leaning (b) for Phase 2.x — defer (a) until many-to-one actually matters.
 - **Suvarcha's interests** — claim flow asks for 3–5 interests right after password set.
 
 ---
