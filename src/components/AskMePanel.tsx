@@ -174,7 +174,7 @@ export function AskMePanel({ interests }: { interests: Interest[] }) {
   }
 
   return (
-    <section className="mx-auto mb-10 w-full max-w-3xl px-4">
+    <section className="mx-auto mt-6 mb-20 w-full max-w-3xl px-4 sm:mt-10 sm:mb-24">
       <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-raised)] p-6 shadow-[0_0_40px_var(--color-accent-glow)] sm:p-8">
         {state.kind === "idle" && (
           <div>
