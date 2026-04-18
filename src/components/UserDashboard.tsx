@@ -1,11 +1,28 @@
+import Link from "next/link";
 import { Fragment } from "react";
 import { User, computeStats, sortQuestionsByDate } from "@/lib/users";
 import { QuestionCard } from "./QuestionCard";
 import { AskMePanel } from "./AskMePanel";
 
-export function UserDashboard({ user }: { user: User }) {
+const PAGE_SIZE = 12;
+
+export function UserDashboard({
+  user,
+  page = 1,
+}: {
+  user: User;
+  page?: number;
+}) {
   const stats = computeStats(user);
-  const questions = sortQuestionsByDate(user.questions);
+  const allQuestions = sortQuestionsByDate(user.questions);
+  const totalPages = Math.max(1, Math.ceil(allQuestions.length / PAGE_SIZE));
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+  const questions = allQuestions.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
+  const hasStats = allQuestions.length > 0;
 
   return (
     <>
@@ -19,55 +36,8 @@ export function UserDashboard({ user }: { user: User }) {
           {user.displayName}
         </h1>
 
-        {user.interests.length > 0 && (
-          <p className="mx-auto max-w-xl text-sm leading-relaxed text-[var(--color-text-muted)]">
-            {user.interests.map((i, idx) => (
-              <Fragment key={i.name}>
-                {idx > 0 && (
-                  <span className="mx-2 text-[var(--color-text-muted)]/50">
-                    ·
-                  </span>
-                )}
-                <span>{i.name}</span>
-              </Fragment>
-            ))}
-          </p>
-        )}
-      </header>
-
-      {user.username === "monte" && (
-        <AskMePanel username={user.username} interests={user.interests} />
-      )}
-
-      <main className="mx-auto w-full max-w-6xl px-6 pb-10">
-        {questions.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)]/50 py-16 text-center">
-            <p className="text-lg text-[var(--color-text-muted)]">
-              No questions yet. Ash will ask soon.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="mb-6 flex items-baseline justify-between">
-              <h3 className="text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
-                All questions
-              </h3>
-              <span className="text-xs text-[var(--color-text-muted)]">
-                {questions.length} total
-              </span>
-            </div>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {questions.map((q) => (
-                <QuestionCard key={q.id} username={user.username} q={q} />
-              ))}
-            </div>
-          </>
-        )}
-      </main>
-
-      {questions.length > 0 && (
-        <div className="mx-auto w-full max-w-3xl px-6 pb-16">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[var(--color-text-muted)]">
+        {hasStats && (
+          <div className="mb-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-[var(--color-text-muted)]">
             <span>
               <span className="font-semibold text-[var(--color-text)]">
                 {stats.total}
@@ -107,8 +77,109 @@ export function UserDashboard({ user }: { user: User }) {
               </span>
             )}
           </div>
-        </div>
+        )}
+
+        {user.interests.length > 0 && (
+          <p className="mx-auto max-w-xl text-sm leading-relaxed text-[var(--color-text-muted)]">
+            {user.interests.map((i, idx) => (
+              <Fragment key={i.name}>
+                {idx > 0 && (
+                  <span className="mx-2 text-[var(--color-text-muted)]/50">
+                    ·
+                  </span>
+                )}
+                <span>{i.name}</span>
+              </Fragment>
+            ))}
+          </p>
+        )}
+      </header>
+
+      {user.username === "monte" && (
+        <AskMePanel username={user.username} interests={user.interests} />
       )}
+
+      <main className="mx-auto w-full max-w-6xl px-6 pb-16">
+        {allQuestions.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)]/50 py-16 text-center">
+            <p className="text-lg text-[var(--color-text-muted)]">
+              No questions yet. Ash will ask soon.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-6 flex items-baseline justify-between">
+              <h3 className="text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+                All questions
+              </h3>
+              <span className="text-xs text-[var(--color-text-muted)]">
+                {allQuestions.length} total
+              </span>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {questions.map((q) => (
+                <QuestionCard key={q.id} username={user.username} q={q} />
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <Pagination
+                username={user.username}
+                currentPage={currentPage}
+                totalPages={totalPages}
+              />
+            )}
+          </>
+        )}
+      </main>
     </>
+  );
+}
+
+function Pagination({
+  username,
+  currentPage,
+  totalPages,
+}: {
+  username: string;
+  currentPage: number;
+  totalPages: number;
+}) {
+  const prevHref =
+    currentPage > 1
+      ? currentPage - 1 === 1
+        ? `/${username}`
+        : `/${username}?page=${currentPage - 1}`
+      : null;
+  const nextHref =
+    currentPage < totalPages ? `/${username}?page=${currentPage + 1}` : null;
+
+  const pillBase =
+    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold tracking-[0.15em] uppercase transition-colors";
+  const pillActive =
+    "border-[var(--color-border)] bg-[var(--color-bg-raised)] text-[var(--color-text-dim)] hover:border-[var(--color-accent-dim)] hover:text-[var(--color-accent)]";
+  const pillDisabled =
+    "cursor-not-allowed border-[var(--color-border)]/50 bg-[var(--color-surface)]/40 text-[var(--color-text-muted)]/50";
+
+  return (
+    <nav className="mt-10 flex flex-wrap items-center justify-center gap-4 text-sm">
+      {prevHref ? (
+        <Link href={prevHref} className={`${pillBase} ${pillActive}`}>
+          ← Newer
+        </Link>
+      ) : (
+        <span className={`${pillBase} ${pillDisabled}`}>← Newer</span>
+      )}
+      <span className="text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+        Page {currentPage} of {totalPages}
+      </span>
+      {nextHref ? (
+        <Link href={nextHref} className={`${pillBase} ${pillActive}`}>
+          Older →
+        </Link>
+      ) : (
+        <span className={`${pillBase} ${pillDisabled}`}>Older →</span>
+      )}
+    </nav>
   );
 }
