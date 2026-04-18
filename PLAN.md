@@ -105,6 +105,7 @@ Goal: make the app feel like one cohesive site (not three). Burn out hardcoded `
 ## Backlog
 
 - **Topic display names** — add `displayName` field to interests JSON entries; UI falls back to title-cased slug when missing. Cosmetic polish; not blocking anything.
+- **Prev/next nav on question detail** — originally scoped into Phase 3 for fast browsing from `/questions`. Nice-to-have, deferred.
 - **Shared questions** — "question of the day" seen by all users; compare answers
 - **Admin panel** — Monte generates invites from web UI (skill-only today)
 - **Topic hierarchy** — `history/roman`, `ai/transformers`

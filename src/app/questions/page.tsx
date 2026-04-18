@@ -54,6 +54,29 @@ export default async function QuestionsPage({
 
   const hasActiveFilter = difficulty !== null || topic !== null;
 
+  const filteredTopics = new Set<string>();
+  let gradedCount = 0;
+  let correctCount = 0;
+  for (const { question: q } of filtered) {
+    filteredTopics.add(q.topic);
+    if (q.result && q.result !== "skipped") {
+      gradedCount++;
+      if (q.result === "correct") correctCount++;
+    }
+  }
+  const correctRate =
+    gradedCount > 0 ? Math.round((correctCount / gradedCount) * 100) : null;
+
+  const tiles: { value: string; label: string; accent?: boolean }[] = [
+    { value: String(filtered.length), label: "Questions" },
+    { value: String(filteredTopics.size), label: "Topics" },
+    {
+      value: correctRate !== null ? `${correctRate}%` : "—",
+      label: "Correct",
+      accent: true,
+    },
+  ];
+
   function buildPageHref(p: number): string {
     const params = new URLSearchParams();
     if (difficulty) params.set("difficulty", difficulty);
@@ -78,9 +101,31 @@ export default async function QuestionsPage({
           <h1 className="font-display mb-3 text-5xl leading-tight font-semibold tracking-tight text-[var(--color-text)] sm:text-6xl">
             Questions
           </h1>
-          <p className="mx-auto max-w-xl text-base text-[var(--color-text-dim)]">
+          <p className="mx-auto mb-10 max-w-xl text-base text-[var(--color-text-dim)]">
             Every question Ash has ever asked. Filter by difficulty or topic.
           </p>
+
+          <div className="mx-auto grid max-w-xl grid-cols-3 gap-px overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-border)]">
+            {tiles.map((t) => (
+              <div
+                key={t.label}
+                className="bg-[var(--color-bg-raised)] px-4 py-6"
+              >
+                <div
+                  className={`font-display text-4xl leading-none font-semibold tracking-tight sm:text-5xl ${
+                    t.accent
+                      ? "text-[var(--color-accent)]"
+                      : "text-[var(--color-text)]"
+                  }`}
+                >
+                  {t.value}
+                </div>
+                <div className="mt-2 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+                  {t.label}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <QuestionFilters
