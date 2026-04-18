@@ -14,20 +14,29 @@ Four difficulty tiers stretch it from casual (easy = yes/no) to serious (xhard =
 
 ## Current State
 
-Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me). **Phase 1 + Phase 2 shipped 2026-04-17.** Phase 3 (foundation cleanup) is next.
+Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me). **Phases 1–3 shipped.**
 
-**Phase 1 — shipped:**
-- Next.js 16 + Tailwind 4, Vercel auto-deploy, emerald-on-black editorial theme (Fraunces serif hero, number-forward stat blocks)
-- Pages: `/`, `/users`, `/[user]` (dashboard or claim-stub), `/[user]/q/[id]`
-- 2 users seeded (Monte claimed, Suvarcha unclaimed with invite `SU-CC23CA`), 11 interests, 1 real quiz
-- Writer skill at [ash-core/skills/quiz-me/SKILL.md](../ash-core/skills/quiz-me/SKILL.md) — writes `users.json` + commits
+**Stack:** Next.js 16 + Tailwind 4, Neon Postgres (HTTP driver), Anthropic SDK direct (`claude-sonnet-4-6`), Zod validation, Vercel auto-deploy. Emerald-on-black editorial theme (Fraunces serif hero).
 
-**Phase 2 — shipped:**
-- Neon Postgres foundation: `users`/`questions` tables + index, `src/lib/db.ts`, `pnpm db:migrate` + `db:seed`, seeded from `users.json`
-- Read path on Postgres: dropped `output: "export"`, server-mode deploy, `src/lib/users.ts` reads from DB
-- API routes: `POST /api/quiz/new` + `POST /api/quiz/grade` live on Vercel, `src/lib/claude.ts` + `src/lib/prompts.ts` + `src/lib/quiz.ts`
-- `<AskMePanel />` + Zod hardening. Homepage: AskMePanel as primary CTA under hero, 3 most recent questions below. Yes/No buttons for easy. `callJSON<T>` schema-validates Claude output. Polish: top-aligned panel, shimmer loading skeleton, consistent card width, result pill next to "Your answer."
-- Dual-write dropped — skill keeps manual `users.json` commits; Postgres is the runtime DB; `db:seed` rebuilds from JSON on demand.
+**Routes:**
+- `/` — hero + AskMePanel + linked stat tiles (Users/Questions/Topics) + recent questions
+- `/users` — user cards + join card
+- `/[user]` — per-user log: serif name, inline stats (quizzes / streak / correct / top topic), interests, paginated question grid
+- `/questions` — all questions, difficulty + topic filters, 3-tile stats reflecting filter state, paginated
+- `/questions/[id]` — question detail with attribution link back to `/@user`
+- `/api/quiz/new` + `/api/quiz/grade` — Zod-validated, parameterized by username
+
+**Shared infra:**
+- `<QuestionList />` — one grid for homepage / `/questions` / `/[user]`
+- `<Pagination />` — generic, callback-driven
+- `<BrandBar compact />` — tighter variant on non-home pages
+- `<SiteFooter />` — persistent Home · Users · Questions nav
+- `<BackButton />` — history-aware with fallback href
+- 308 redirect `/:user/q/:id → /questions/:id` for backward compat
+
+**Data:** `users` + `questions` tables, seeded from `users.json`. 2 users (Monte claimed, Suvarcha unclaimed with invite `SU-CC23CA`), 11 interests, ~33 questions. Skill at [ash-core/skills/quiz-me/SKILL.md](../ash-core/skills/quiz-me/SKILL.md) writes `users.json` + commits; `pnpm db:seed` rebuilds Postgres on demand.
+
+**De-monte'd:** hardcoded `"monte"` gone from API routes, AskMePanel, UserCard, question URLs. Auth plumbing is ready.
 
 ---
 
@@ -35,78 +44,55 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 
 | # | Decision | Choice |
 |---|---|---|
-| 1 | Storage | **Neon Postgres** (runtime truth); `users.json` remains seed + version-controlled snapshot |
-| 2 | Auth | Plain-text password, signed-cookie session (HMAC, no library). Deferred to Phase 4. |
-| 3 | Invite flow | Invite code generated + committed by skill; URL `/[user]?invite=<code>` |
-| 4 | Routing | `/` = landing + Monte's log; `/users` = all users; `/[user]` = per-user |
+| 1 | Storage | **Neon Postgres** (runtime truth); `users.json` = seed + version-controlled snapshot |
+| 2 | Auth | Plain-text password, HMAC-signed cookie session (no library). Phase 4. |
+| 3 | Invite flow | Skill generates + commits invite code; URL `/[user]?invite=<code>` |
+| 4 | Routing | `/` = landing; `/users`, `/[user]`, `/questions`, `/questions/[id]` |
 | 5 | Public vs private | All browsing public. Ask/answer/claim requires session (Phase 4+). |
-| 6 | Claude API | Serverless only; `ANTHROPIC_API_KEY` in Vercel env; never client-side |
-| 7 | Voice | Phase 6 via Web Speech API. v1 = text + Y/N buttons. |
-| 8 | Rate limit | 20 quizzes/user/day (added in Phase 4 with auth) |
-| 9 | Skill writes | Skill commits to `users.json` only. Postgres is the runtime DB; `db:seed` rebuilds from `users.json` when needed. No dual-write. |
-| 10 | LLM SDK | `@anthropic-ai/sdk` direct. Vercel AI SDK skipped — overkill for two `messages.create` calls, no streaming/tools. |
-| 11 | Validation | **Zod** for API bodies + Claude output schemas (folded into Step 4) |
+| 6 | Claude API | Serverless only; `ANTHROPIC_API_KEY` in Vercel env |
+| 7 | Voice | Web Speech API later; v1 = text + Y/N buttons |
+| 8 | Rate limit | 20 quizzes/user/day (Phase 4 with auth) |
+| 9 | Skill writes | `users.json` only; Postgres is runtime DB; no dual-write |
+| 10 | LLM SDK | `@anthropic-ai/sdk` direct |
+| 11 | Validation | **Zod** for API bodies + Claude output schemas |
 
 ---
 
 ## Phases
 
-### Phase 3 (active): Foundation cleanup — routes, shared components, de-monte-ification
-
-Goal: make the app feel like one cohesive site (not three). Burn out hardcoded `"monte"` strings so auth lands cleanly in Phase 4.
-
-**Routes:**
-- **New `/questions`** — full list of all questions, newest first. Click a card → `/[user]/q/[id]` (today's behavior); **add prev/next nav on the detail page** so you can browse fast. Filter row: difficulty pills + topic dropdown.
-- **`/` (homepage)** — move the 3 stats from `/users` onto homepage as linked tiles: `USERS` → `/users`, `QUESTIONS` → `/questions`, `TOPICS` → future. "See all" under Recent Questions now points to `/questions` (not `/users`).
-- **`/users`** — strip stats block; just user cards + join card.
-- **`/[user]`** — unify layout with the unclaimed stub aesthetic: centered serif name, status pill above, supporting content below. Drop the dense `StatBar` + `InterestChips` header. AskMePanel rendered if the user is you (parameterized by `username` prop, not hardcoded). Thin stats row below questions. Interests as subtle chips under the name.
-
-**Shared components / structure:**
-- **`<QuestionList />`** — one component for homepage recent, `/questions`, and `/[user]` question log. One collapse behavior, one look.
-- **Persistent footer nav** — `SiteFooter` picks up `Home / Users / Questions` links. BrandBar stays minimal.
-- **BrandBar tighter** on non-home pages (or drop on `/[user]` since the user's name is the identity).
-
-**De-monte-ification:**
-- Remove `const USERNAME = "monte"` from `/api/quiz/new` + `/api/quiz/grade` — take `username` in request body.
-- Homepage no longer imports `getUser("monte")` directly; AskMePanel takes `username` prop.
-- `UserDashboard` gates AskMePanel on a single check (still monte-only in v1, but the plumbing is ready for auth).
-
-**Exit:** `/monte` and `/suvarcha` share the same layout shell. `/questions` is a real browsing surface. Hardcoded `"monte"` is gone from 4 spots. Auth can land on top.
+*No active phase right now — reprioritize from the menu below.*
 
 ### Phase 4: Auth + multi-user writes
-
-- `POST /api/users/claim`, `/login`, `/logout`; HMAC-signed cookie sessions, middleware attaches `user`
-- Gate `/api/quiz/*` on session
+- HMAC-signed cookie sessions (no library), middleware attaches `user`
+- `POST /api/users/claim`, `/login`, `/logout`
+- Gate `/api/quiz/*` on session; remove `username` from request body
 - Claim flow UI on `/[user]?invite=XXX`
-- Rate limit: 20/user/day in Postgres
-- Suvarcha claims, asks her first question
+- Rate limit 20/user/day in Postgres
+- **Exit:** Suvarcha claims her account and asks her first question
 
 ### Phase 5: Guest flow + homepage live demo
-
-- `POST /api/quiz/try` (unauthed) — generate + grade using Monte's interests, don't persist
-- Homepage: on load pick a random Monte question → reveal pattern; "Try your own" → guest API → modal "Create an account to save this"
+- `POST /api/quiz/try` — unauthed generate + grade using Monte's interests, no persistence
+- Homepage: random Monte question on load (reveal pattern) + "Try your own" → guest API → "Create an account to save this" modal
 
 ### Phase 6: Charts + voice + leaderboard
-
 - `/[user]/stats` — Recharts: daily bar (stacked by difficulty), 7-day correct-rate line, topic breakdown, stat tiles
 - Voice input via Web Speech API
 - Homepage leaderboard: streak / correct-rate / total
 - Per-user custom accent color
 
 ### Phase 7: Image mode + polish
-
 - `/api/quiz/new` handles `medium=image` via `nano-banana`; Vercel Blob for storage
 - OG cards per question
-- Spaced repetition: `result=wrong` resurface at 3/7/30 days
+- Spaced repetition: `result=wrong` resurfaces at 3/7/30 days
 - Custom domain (`quizme.xyz`?)
 
 ---
 
 ## Backlog
 
-- **Topic display names** — add `displayName` field to interests JSON entries; UI falls back to title-cased slug when missing. Cosmetic polish; not blocking anything.
-- **Prev/next nav on question detail** — originally scoped into Phase 3 for fast browsing from `/questions`. Nice-to-have, deferred.
-- **Shared questions** — "question of the day" seen by all users; compare answers
+- **Topic display names** — `displayName` field on interests; UI falls back to title-cased slug
+- **Prev/next nav on question detail** — fast browse from `/questions`
+- **Shared questions** — "question of the day" all users see; compare answers
 - **Admin panel** — Monte generates invites from web UI (skill-only today)
 - **Topic hierarchy** — `history/roman`, `ai/transformers`
 - **Session mode** — "quiz me 5 hard" → batch of 5
@@ -127,4 +113,4 @@ Goal: make the app feel like one cohesive site (not three). Burn out hardcoded `
 
 ---
 
-*Updated: 2026-04-17*
+*Updated: 2026-04-18*
