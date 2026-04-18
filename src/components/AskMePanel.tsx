@@ -262,22 +262,22 @@ export function AskMePanel({ interests }: { interests: Interest[] }) {
 
         {state.kind === "loading" && (
           <div aria-busy="true">
-            <div className="mb-4 flex items-center gap-2">
+            <div className="mb-5 flex items-center gap-2">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-accent)]" />
               <span className="text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
                 Ash is writing a question…
               </span>
             </div>
 
-            <div className="mb-2 h-7 w-5/6 animate-pulse rounded bg-[var(--color-surface)] sm:h-8" />
-            <div className="mb-2 h-7 w-3/4 animate-pulse rounded bg-[var(--color-surface)] sm:h-8" />
-            <div className="mb-6 h-7 w-1/2 animate-pulse rounded bg-[var(--color-surface)] sm:h-8" />
+            <div className="mb-3 h-9 w-5/6 animate-pulse rounded bg-[var(--color-border-strong)] sm:h-10" />
+            <div className="mb-3 h-9 w-3/4 animate-pulse rounded bg-[var(--color-border-strong)] sm:h-10" />
+            <div className="mb-6 h-9 w-2/5 animate-pulse rounded bg-[var(--color-border-strong)] sm:h-10" />
 
-            <div className="h-24 w-full animate-pulse rounded-lg bg-[var(--color-surface)]" />
+            <div className="h-28 w-full animate-pulse rounded-lg bg-[var(--color-border-strong)]/70" />
 
-            <div className="mt-4 flex gap-2">
-              <div className="h-10 w-24 animate-pulse rounded-full bg-[var(--color-surface)]" />
-              <div className="h-10 w-20 animate-pulse rounded-full bg-[var(--color-surface)]" />
+            <div className="mt-5 flex gap-2">
+              <div className="h-11 w-28 animate-pulse rounded-full bg-[var(--color-border-strong)]" />
+              <div className="h-11 w-20 animate-pulse rounded-full bg-[var(--color-border-strong)]/60" />
             </div>
           </div>
         )}
