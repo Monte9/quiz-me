@@ -123,10 +123,9 @@ export function AskMePanel({ interests }: { interests: Interest[] }) {
     }
   }
 
-  async function submitAnswer(skip = false) {
+  async function submitAnswer(payloadAnswer: string) {
     if (state.kind !== "asking") return;
     setError(null);
-    const payloadAnswer = skip ? "" : answer;
     const prev = state;
     setState({
       kind: "grading",
@@ -289,47 +288,83 @@ export function AskMePanel({ interests }: { interests: Interest[] }) {
               {state.question}
             </p>
 
-            <textarea
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              disabled={state.kind === "grading"}
-              rows={state.difficulty === "xhard" ? 8 : 4}
-              placeholder={
-                state.difficulty === "easy"
-                  ? "yes / no"
-                  : state.difficulty === "xhard"
-                    ? "propose your answer — take your time"
-                    : "your answer"
-              }
-              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:border-[var(--color-accent-dim)] focus:outline-none disabled:opacity-60"
-            />
-
-            {state.kind === "asking" ? (
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => submitAnswer(false)}
-                  disabled={answer.trim() === ""}
-                  className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-bg)] transition-all hover:bg-[var(--color-accent-bright)] hover:shadow-[0_0_30px_var(--color-accent-glow)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none"
-                >
-                  Submit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => submitAnswer(true)}
-                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text-dim)] transition-all hover:border-[var(--color-accent-dim)] hover:text-[var(--color-text)]"
-                >
-                  Skip
-                </button>
-                {error && (
-                  <p className="mt-2 w-full text-sm text-red-400">{error}</p>
-                )}
-              </div>
+            {state.difficulty === "easy" ? (
+              state.kind === "asking" ? (
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => submitAnswer("yes")}
+                    className="inline-flex min-w-28 items-center justify-center rounded-full bg-[var(--color-accent)] px-6 py-3 text-base font-semibold text-[var(--color-bg)] transition-all hover:bg-[var(--color-accent-bright)] hover:shadow-[0_0_30px_var(--color-accent-glow)]"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => submitAnswer("no")}
+                    className="inline-flex min-w-28 items-center justify-center rounded-full bg-[var(--color-accent)] px-6 py-3 text-base font-semibold text-[var(--color-bg)] transition-all hover:bg-[var(--color-accent-bright)] hover:shadow-[0_0_30px_var(--color-accent-glow)]"
+                  >
+                    No
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => submitAnswer("")}
+                    className="inline-flex items-center justify-center rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-5 py-3 text-sm font-semibold text-[var(--color-text-dim)] transition-all hover:border-[var(--color-accent-dim)] hover:text-[var(--color-text)]"
+                  >
+                    Skip
+                  </button>
+                  {error && (
+                    <p className="mt-2 w-full text-sm text-red-400">{error}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-accent)]" />
+                  Ash is grading…
+                </div>
+              )
             ) : (
-              <div className="mt-4 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-accent)]" />
-                Ash is grading…
-              </div>
+              <>
+                <textarea
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  disabled={state.kind === "grading"}
+                  rows={state.difficulty === "xhard" ? 8 : 4}
+                  placeholder={
+                    state.difficulty === "xhard"
+                      ? "propose your answer — take your time"
+                      : "your answer"
+                  }
+                  className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:border-[var(--color-accent-dim)] focus:outline-none disabled:opacity-60"
+                />
+
+                {state.kind === "asking" ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => submitAnswer(answer)}
+                      disabled={answer.trim() === ""}
+                      className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-bg)] transition-all hover:bg-[var(--color-accent-bright)] hover:shadow-[0_0_30px_var(--color-accent-glow)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none"
+                    >
+                      Submit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => submitAnswer("")}
+                      className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text-dim)] transition-all hover:border-[var(--color-accent-dim)] hover:text-[var(--color-text)]"
+                    >
+                      Skip
+                    </button>
+                    {error && (
+                      <p className="mt-2 w-full text-sm text-red-400">{error}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mt-4 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-accent)]" />
+                    Ash is grading…
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
