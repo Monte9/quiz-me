@@ -104,6 +104,25 @@ export async function getUser(username: string): Promise<User | null> {
   return mapUser(userRows[0], questionRows.map(mapQuestion));
 }
 
+export async function getAllQuestions(): Promise<
+  { username: string; question: Question }[]
+> {
+  const rows = await sql`
+    select * from questions order by created_at desc
+  `;
+  return rows.map((row) => ({
+    username: row.username as string,
+    question: mapQuestion(row),
+  }));
+}
+
+export async function getAllTopics(): Promise<string[]> {
+  const rows = await sql`
+    select distinct topic from questions order by topic asc
+  `;
+  return rows.map((r) => r.topic as string);
+}
+
 export async function getQuestionById(
   username: string,
   id: string,

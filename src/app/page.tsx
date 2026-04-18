@@ -36,7 +36,7 @@ export default async function Home() {
               Recent questions
             </h3>
             <Link
-              href="/users"
+              href="/questions"
               className="text-xs font-semibold tracking-[0.15em] text-[var(--color-text-muted)] uppercase transition-colors hover:text-[var(--color-accent)]"
             >
               See all →

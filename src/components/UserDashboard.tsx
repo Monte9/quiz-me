@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { Fragment } from "react";
 import { User, computeStats, sortQuestionsByDate } from "@/lib/users";
 import { QuestionList } from "./QuestionList";
 import { AskMePanel } from "./AskMePanel";
+import { Pagination } from "./Pagination";
 
 const PAGE_SIZE = 12;
 
@@ -119,62 +119,14 @@ export function UserDashboard({
           emptyMessage="No questions yet. Ash will ask soon."
         />
 
-        {totalPages > 1 && (
-          <Pagination
-            username={user.username}
-            currentPage={currentPage}
-            totalPages={totalPages}
-          />
-        )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          buildHref={(p) =>
+            p === 1 ? `/${user.username}` : `/${user.username}?page=${p}`
+          }
+        />
       </main>
     </>
-  );
-}
-
-function Pagination({
-  username,
-  currentPage,
-  totalPages,
-}: {
-  username: string;
-  currentPage: number;
-  totalPages: number;
-}) {
-  const prevHref =
-    currentPage > 1
-      ? currentPage - 1 === 1
-        ? `/${username}`
-        : `/${username}?page=${currentPage - 1}`
-      : null;
-  const nextHref =
-    currentPage < totalPages ? `/${username}?page=${currentPage + 1}` : null;
-
-  const pillBase =
-    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold tracking-[0.15em] uppercase transition-colors";
-  const pillActive =
-    "border-[var(--color-border)] bg-[var(--color-bg-raised)] text-[var(--color-text-dim)] hover:border-[var(--color-accent-dim)] hover:text-[var(--color-accent)]";
-  const pillDisabled =
-    "cursor-not-allowed border-[var(--color-border)]/50 bg-[var(--color-surface)]/40 text-[var(--color-text-muted)]/50";
-
-  return (
-    <nav className="mt-10 flex flex-wrap items-center justify-center gap-4 text-sm">
-      {prevHref ? (
-        <Link href={prevHref} className={`${pillBase} ${pillActive}`}>
-          ← Newer
-        </Link>
-      ) : (
-        <span className={`${pillBase} ${pillDisabled}`}>← Newer</span>
-      )}
-      <span className="text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
-        Page {currentPage} of {totalPages}
-      </span>
-      {nextHref ? (
-        <Link href={nextHref} className={`${pillBase} ${pillActive}`}>
-          Older →
-        </Link>
-      ) : (
-        <span className={`${pillBase} ${pillDisabled}`}>Older →</span>
-      )}
-    </nav>
   );
 }
