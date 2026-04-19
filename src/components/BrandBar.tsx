@@ -6,20 +6,12 @@ const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/questions", label: "Questions" },
 ];
 
-export function BrandBar({ compact = false }: { compact?: boolean } = {}) {
+export function BrandBar() {
   return (
-    <header
-      className={`mx-auto flex w-full max-w-7xl items-center justify-between px-6 ${
-        compact ? "pt-5" : "pt-6 sm:pt-8"
-      }`}
-    >
+    <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 pt-6 sm:pt-8">
       <Link
         href="/"
-        className={`group inline-block font-semibold uppercase ${
-          compact
-            ? "text-[0.6rem] tracking-[0.3em]"
-            : "text-[0.7rem] tracking-[0.35em]"
-        }`}
+        className="group inline-block text-[0.7rem] font-semibold tracking-[0.35em] uppercase"
       >
         <span className="text-[var(--color-text-muted)] transition-colors group-hover:text-[var(--color-text-dim)]">
           Quiz

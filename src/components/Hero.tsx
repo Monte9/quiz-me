@@ -51,7 +51,7 @@ export function Hero() {
           {current.eyebrow}
         </div>
 
-        <h1 className="font-display mx-auto mb-6 max-w-3xl text-5xl leading-[1.02] font-semibold tracking-tight text-[var(--color-text)] sm:text-6xl md:text-7xl">
+        <h1 className="font-display mx-auto mb-6 max-w-3xl text-4xl leading-[1.02] font-semibold tracking-tight text-[var(--color-text)] sm:text-6xl md:text-7xl">
           {current.lead}
           <br />
           <span className="text-[var(--color-accent)]">{current.accent}</span>

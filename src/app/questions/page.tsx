@@ -88,16 +88,10 @@ export default async function QuestionsPage({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <BrandBar compact />
+      <BrandBar />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 pt-10 pb-16">
         <div className="mb-10 text-center">
-          <Link
-            href="/"
-            className="mb-6 inline-flex items-center gap-1.5 text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase transition-colors hover:text-[var(--color-accent)]"
-          >
-            ← Home
-          </Link>
           <h1 className="font-display mb-3 text-5xl leading-tight font-semibold tracking-tight text-[var(--color-text)] sm:text-6xl">
             Questions
           </h1>
