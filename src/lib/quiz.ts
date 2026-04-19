@@ -66,3 +66,17 @@ export function pickTopic(
   const pool = fresh.length > 0 ? fresh : names;
   return pool[Math.floor(Math.random() * pool.length)];
 }
+
+export async function getRecentQuestionsForTopic(
+  username: string,
+  topic: string,
+  limit = 20,
+): Promise<string[]> {
+  const rows = await sql`
+    select question from questions
+    where username = ${username} and topic = ${topic}
+    order by created_at desc
+    limit ${limit}
+  `;
+  return rows.map((r) => r.question as string);
+}

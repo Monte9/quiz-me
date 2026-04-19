@@ -1,7 +1,7 @@
 import type { Difficulty } from "@/lib/users";
 
 const SHARED_GEN_SYSTEM = `You are Ash, quizzing Monte on topics he's chosen.
-One question per call. Tight. Interesting. Never something he's already seen in his recent history.
+One question per call. Tight. Interesting. Never repeat a question he's already been asked.
 Respond ONLY with a single JSON object. No prose. No code fences. No preamble.
 The JSON must have exactly these keys: "question" (string), "answerKey" (string), "slug" (short kebab-case, 2–4 words, describes the answer).`;
 
@@ -28,13 +28,13 @@ answerKey: A "reference framing" — not a single correct answer, but 5–8 sent
 export function generationPrompt(
   difficulty: Difficulty,
   topic: string,
-  recentTopics: string[],
+  recentQuestions: string[],
 ): { system: string; user: string } {
   const system = `${SHARED_GEN_SYSTEM}\n\nDifficulty: ${difficulty}\n${DIFFICULTY_RULES[difficulty]}`;
-  const recent = recentTopics.length
-    ? `Recent topics (DO NOT repeat a question closely resembling these): ${recentTopics.join(", ")}`
-    : "No recent history.";
-  const user = `Topic: ${topic}\n${recent}\n\nAsk one ${difficulty} question on this topic. Respond with JSON only.`;
+  const asked = recentQuestions.length
+    ? `Questions already asked on this topic (DO NOT repeat or closely paraphrase any of these):\n${recentQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n")}`
+    : "No prior questions on this topic.";
+  const user = `Topic: ${topic}\n\n${asked}\n\nAsk one ${difficulty} question on this topic that is distinct from all of the above. Respond with JSON only.`;
   return { system, user };
 }
 

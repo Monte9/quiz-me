@@ -5,6 +5,7 @@ import { callJSON } from "@/lib/claude";
 import { generationPrompt } from "@/lib/prompts";
 import {
   difficultySchema,
+  getRecentQuestionsForTopic,
   idPrefix,
   loadQuizContext,
   pickTopic,
@@ -54,9 +55,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "could not pick topic" }, { status: 500 });
   }
 
+  const recentQuestions = await getRecentQuestionsForTopic(username, topic, 20);
+
   let gen: z.infer<typeof genOutputSchema>;
   try {
-    const { system, user } = generationPrompt(difficulty, topic, ctx.recentTopics);
+    const { system, user } = generationPrompt(difficulty, topic, recentQuestions);
     gen = await callJSON({
       system,
       user,
