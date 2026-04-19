@@ -17,6 +17,7 @@ export interface Interest {
 
 export interface Question {
   id: string;
+  username: string;
   difficulty: Difficulty;
   medium: Medium;
   topic: string;
@@ -199,6 +200,40 @@ export function computeContextStats(
     trend,
     xhardAvg,
     uniqueTopics: topicSet.size,
+  };
+}
+
+/**
+ * Leaderboard rank for `username` among `users`.
+ *
+ * Score = number of correct graded answers.
+ * Tiebreaks: correctRate desc, then total answered desc.
+ *
+ * Users with zero graded answers rank last (they get no rank among
+ * the ranked pool — but we still include them at the bottom).
+ */
+export function computeRank(
+  users: User[],
+  username: string,
+): { rank: number; total: number } {
+  const scored = users.map((u) => {
+    const s = computeStats(u);
+    return {
+      username: u.username,
+      correct: s.correct,
+      correctRate: s.correctRate ?? -1,
+      total: s.total,
+    };
+  });
+  scored.sort((a, b) => {
+    if (b.correct !== a.correct) return b.correct - a.correct;
+    if (b.correctRate !== a.correctRate) return b.correctRate - a.correctRate;
+    return b.total - a.total;
+  });
+  const idx = scored.findIndex((s) => s.username === username);
+  return {
+    rank: idx >= 0 ? idx + 1 : scored.length,
+    total: scored.length,
   };
 }
 

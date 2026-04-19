@@ -21,6 +21,7 @@ function iso(value: unknown): string {
 function mapQuestion(row: Record<string, unknown>): Question {
   return {
     id: row.id as string,
+    username: row.username as string,
     difficulty: row.difficulty as Difficulty,
     medium: row.medium as Medium,
     topic: row.topic as string,

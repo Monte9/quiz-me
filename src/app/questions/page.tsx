@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getAllQuestions, getAllTopics } from "@/lib/users";
-import type { Difficulty } from "@/lib/users";
+import type { Difficulty } from "@/lib/quiz-core";
 import { BrandBar } from "@/components/BrandBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { QuestionList } from "@/components/QuestionList";
@@ -18,12 +18,14 @@ export default async function QuestionsPage({
   searchParams: Promise<{
     difficulty?: string;
     topic?: string;
+    user?: string;
     page?: string;
   }>;
 }) {
   const {
     difficulty: rawDiff,
     topic: rawTopic,
+    user: rawUser,
     page: rawPage,
   } = await searchParams;
 
@@ -33,6 +35,7 @@ export default async function QuestionsPage({
     ? (rawDiff as Difficulty)
     : null;
   const topic = rawTopic?.trim() || null;
+  const user = rawUser?.trim() || null;
   const page = Math.max(1, parseInt(rawPage ?? "1", 10) || 1);
 
   const [all, topics] = await Promise.all([getAllQuestions(), getAllTopics()]);
@@ -44,6 +47,9 @@ export default async function QuestionsPage({
   if (topic) {
     filtered = filtered.filter((q) => q.topic === topic);
   }
+  if (user) {
+    filtered = filtered.filter((q) => q.username === user);
+  }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -52,7 +58,8 @@ export default async function QuestionsPage({
     currentPage * PAGE_SIZE,
   );
 
-  const hasActiveFilter = difficulty !== null || topic !== null;
+  const hasActiveFilter =
+    difficulty !== null || topic !== null || user !== null;
 
   const filteredTopics = new Set<string>();
   let gradedCount = 0;
@@ -81,7 +88,16 @@ export default async function QuestionsPage({
     const params = new URLSearchParams();
     if (difficulty) params.set("difficulty", difficulty);
     if (topic) params.set("topic", topic);
+    if (user) params.set("user", user);
     if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return qs ? `/questions?${qs}` : "/questions";
+  }
+
+  function clearUserHref(): string {
+    const params = new URLSearchParams();
+    if (difficulty) params.set("difficulty", difficulty);
+    if (topic) params.set("topic", topic);
     const qs = params.toString();
     return qs ? `/questions?${qs}` : "/questions";
   }
@@ -126,7 +142,23 @@ export default async function QuestionsPage({
           topics={topics}
           difficulty={difficulty}
           topic={topic}
+          user={user}
         />
+
+        {user && (
+          <div className="mb-6 flex justify-center">
+            <Link
+              href={clearUserHref()}
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-accent-dim)]/40 bg-[var(--color-accent-glow)] px-3 py-1 text-[0.7rem] font-semibold tracking-[0.15em] text-[var(--color-accent)] uppercase transition-colors hover:border-[var(--color-accent)]"
+            >
+              @{user}
+              <span className="text-[var(--color-text-muted)]">·</span>
+              <span className="text-[var(--color-text-dim)] hover:text-[var(--color-text)]">
+                clear ×
+              </span>
+            </Link>
+          </div>
+        )}
 
         <div className="mb-6 flex items-baseline justify-between">
           <h3 className="text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">

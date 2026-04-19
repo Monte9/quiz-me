@@ -1,4 +1,5 @@
-import { getUser } from "@/lib/users";
+import { getAllUsers, getUser } from "@/lib/users";
+import { computeRank } from "@/lib/quiz-core";
 import { UserDashboard } from "@/components/UserDashboard";
 import { ClaimStub } from "@/components/ClaimStub";
 import { BrandBar } from "@/components/BrandBar";
@@ -7,18 +8,16 @@ import { notFound } from "next/navigation";
 
 export default async function UserPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ user: string }>;
-  searchParams: Promise<{ page?: string }>;
 }) {
   const { user: username } = await params;
-  const { page: pageParam } = await searchParams;
-  const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
-  const user = await getUser(username);
+  const [user, allUsers] = await Promise.all([getUser(username), getAllUsers()]);
   if (!user) notFound();
 
   const claimed = user.claimedAt !== null;
+  const claimedUsers = allUsers.filter((u) => u.claimedAt !== null);
+  const { rank, total } = computeRank(claimedUsers, user.username);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -26,7 +25,7 @@ export default async function UserPage({
 
       <div className="flex-1">
         {claimed ? (
-          <UserDashboard user={user} page={page} />
+          <UserDashboard user={user} rank={rank} rankTotal={total} />
         ) : (
           <ClaimStub
             displayName={user.displayName}

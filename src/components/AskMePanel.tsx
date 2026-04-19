@@ -321,7 +321,7 @@ export function AskMePanel({
                 {showTopic && (
                   <div
                     role="listbox"
-                    className="absolute top-full left-0 z-20 mt-2 w-[min(22rem,80vw)] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-raised)] p-3 text-sm shadow-xl"
+                    className="absolute top-full left-1/2 z-20 mt-2 w-[22rem] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-hover)] p-3 text-sm shadow-2xl ring-1 ring-black/40"
                   >
                     <div className="mb-2 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
                       Pick a topic
@@ -410,7 +410,7 @@ export function AskMePanel({
                 {showDifficulty && (
                   <div
                     role="listbox"
-                    className="absolute top-full left-0 z-20 mt-2 w-44 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-raised)] p-1 text-sm shadow-xl"
+                    className="absolute top-full left-1/2 z-20 mt-2 w-56 max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-hidden rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-hover)] p-1 text-sm shadow-2xl ring-1 ring-black/40"
                   >
                     {DIFFICULTIES.map((d) => (
                       <button

@@ -23,10 +23,12 @@ const difficultyActive: Record<Difficulty, string> = {
 function buildHref(overrides: {
   difficulty?: string | null;
   topic?: string | null;
+  user?: string | null;
 }) {
   const params = new URLSearchParams();
   if (overrides.difficulty) params.set("difficulty", overrides.difficulty);
   if (overrides.topic) params.set("topic", overrides.topic);
+  if (overrides.user) params.set("user", overrides.user);
   const qs = params.toString();
   return qs ? `/questions?${qs}` : "/questions";
 }
@@ -35,10 +37,12 @@ export function QuestionFilters({
   topics,
   difficulty,
   topic,
+  user,
 }: {
   topics: string[];
   difficulty: Difficulty | null;
   topic: string | null;
+  user: string | null;
 }) {
   const router = useRouter();
 
@@ -51,7 +55,7 @@ export function QuestionFilters({
     <div className="mb-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Link
-          href={buildHref({ topic })}
+          href={buildHref({ topic, user })}
           className={`${pillBase} ${
             difficulty === null
               ? "border-[var(--color-text-dim)]/60 bg-[var(--color-surface)] text-[var(--color-text)]"
@@ -63,7 +67,7 @@ export function QuestionFilters({
         {DIFFICULTIES.map((d) => (
           <Link
             key={d}
-            href={buildHref({ difficulty: d, topic })}
+            href={buildHref({ difficulty: d, topic, user })}
             className={`${pillBase} ${
               difficulty === d ? difficultyActive[d] : pillInactive
             }`}
@@ -86,7 +90,7 @@ export function QuestionFilters({
             value={topic ?? ""}
             onChange={(e) => {
               const next = e.target.value || null;
-              router.push(buildHref({ difficulty, topic: next }));
+              router.push(buildHref({ difficulty, topic: next, user }));
             }}
             className="cursor-pointer rounded-full border border-[var(--color-border)] bg-[var(--color-bg-raised)] px-3 py-1.5 text-xs font-semibold tracking-[0.1em] text-[var(--color-text-dim)] uppercase transition-colors hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-dim)] focus:outline-none"
           >
