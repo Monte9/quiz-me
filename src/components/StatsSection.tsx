@@ -23,14 +23,14 @@ export function StatsSection({
 
   return (
     <section className="mx-auto w-full max-w-6xl px-6 py-16 sm:py-20">
-      <div className="grid gap-6 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-3 sm:gap-6">
         {stats.map((s) => {
           const inner = (
-            <div className="group flex h-full flex-col items-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-raised)] px-6 py-10 text-center transition-all hover:border-[var(--color-accent-dim)] hover:shadow-[0_0_40px_var(--color-accent-glow)]">
-              <div className="font-display text-6xl leading-none font-semibold tracking-tight text-[var(--color-accent)] transition-colors group-hover:text-[var(--color-accent-bright)] sm:text-7xl">
+            <div className="group flex h-full flex-col items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-raised)] px-3 py-6 text-center transition-all hover:border-[var(--color-accent-dim)] hover:shadow-[0_0_40px_var(--color-accent-glow)] sm:rounded-2xl sm:px-6 sm:py-10">
+              <div className="font-display text-4xl leading-none font-semibold tracking-tight text-[var(--color-accent)] transition-colors group-hover:text-[var(--color-accent-bright)] sm:text-6xl md:text-7xl">
                 {s.value}
               </div>
-              <div className="mt-4 text-xs font-semibold tracking-[0.2em] text-[var(--color-text)] uppercase">
+              <div className="mt-2 text-[0.6rem] leading-tight font-semibold tracking-[0.15em] text-[var(--color-text)] uppercase sm:mt-4 sm:text-xs sm:tracking-[0.2em]">
                 {s.label}
               </div>
             </div>
