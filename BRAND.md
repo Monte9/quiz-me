@@ -118,27 +118,30 @@ Single source of truth. Update here first, then mirror into the code. If a page 
 Quiz Me
 ```
 
-**Hero eyebrow** (`Hero.tsx`)
-```
-For trivia nerds
-```
-
-**Hero H1** (rotating crossfade between two variants, swap every ~5s)
+**Hero eyebrow + H1** (paired rotating crossfade, swap every ~5s — eyebrow and H1 swap together)
 ```
 Variant A:
-  Trivia that knows
-  what you love.
+  Eyebrow: For trivia nerds
+  H1:      Trivia that knows
+           what you love.
 
 Variant B:
-  Master the topics
-  that matter to you.
+  Eyebrow: For curious minds
+  H1:      Master the topics
+           that matter to you.
 ```
-Line break falls after the lead phrase; the second line is rendered in the accent color.
+The eyebrow pairs with the H1 — they rotate as a unit. Line break in the H1 falls after the lead phrase; the second line is rendered in the accent color.
 
 **Hero subhead**
 ```
 Personalized to your topics. Questions that challenge you. Charts that track your progress.
 ```
+
+**Hero primary CTA** (button under subhead)
+```
+Try it now →
+```
+In Phase 5 this anchors to the AskMePanel below. In Phase 6 it switches to link to `/play`.
 
 **AskMePanel heading** (`AskMePanel.tsx`)
 ```

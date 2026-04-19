@@ -61,9 +61,50 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 
 ## Phases
 
-### Phase 5 (queued): UX polish round 2
+### Phase 5 (active): Landing page redesign
 
-TBD — Monte to populate after more dogfood with Su. Likely candidates from the backlog: prev/next nav on question detail, topic display names, skill ↔ web MC coherence.
+Now that the product mechanics are solid, make the landing page pull its weight as a marketing surface. Informed by [BRAND.md](./BRAND.md) (two ICPs, three pillars, rotating taglines). Spec: [specs/phase-5-landing.md](./specs/phase-5-landing.md) *(to be written)*.
+
+**Scope:**
+- **BrandBar moves to top-left** (was centered). Classic marketing-site anchor.
+- **Paired rotating eyebrow + H1.** Eyebrow swaps with the H1 as a unit. `For trivia nerds` ↔ `Trivia that knows what you love.` / `For curious minds` ↔ `Master the topics that matter to you.` 5s cadence, 500ms crossfade.
+- **Primary CTA button in hero**: `Try it now →`. In Phase 5 it anchors to the AskMePanel below (smooth scroll). In Phase 6 it switches to `/play`.
+- **Stats section** broken out of the tile row — bigger typography, own section, micro-captions under each number.
+- **Three pillar cards**: Personalized / Challenging / Tracked. One card per pillar, plain-language body copy from BRAND.md.
+- **Recap + CTA section** at the bottom: "Ready to get started?" with "Try it now →" + "Ask for an invite" buttons, plus two sub-cards linking to `/questions` and `/users`.
+- **AskMePanel stays on the landing** for Phase 5 (it's the inline demo the top CTA scrolls to). Moves to `/play` in Phase 6.
+- **BRAND.md "Copy by page" section** stays in sync as copy changes.
+
+**Exit:** Landing scroll is a coherent marketing narrative (hero → stats → pillars → demo → proof → CTA). Every piece of copy traces to BRAND.md. Both ICPs (Su + Monte) feel spoken to.
+
+### Phase 6 (queued): `/play` guest mode + soft login
+
+Spin the demo out of the landing page into its own product surface with guest-mode trial.
+
+**Scope:**
+- **New route `/play`** — dedicated quiz playground.
+- **Guest trial**: 5 free questions, no account needed. Counter visible (`1/5`, `2/5`, …). After 5, claim banner: "Want to keep your log? Claim your username →" → invite flow (or future self-serve signup).
+- **Soft-login cookie**: when a visitor has a known username stored in cookie, `/play` defaults to that account and writes to their log (no full auth yet — this is a personal-use cookie, upgradeable to HMAC-signed session later).
+- **`POST /api/quiz/try`** — guest variant of `/quiz/new`, no DB writes, ephemeral.
+- **Landing CTA flip**: hero + bottom "Try it now" buttons switch from `#ask` anchor to `/play`. AskMePanel removed from landing.
+- **Topic source for guests**: curated set of sample topics (e.g. Roman history, pickleball, jazz, space) so guests don't have to configure anything.
+
+**Exit:** Visitor lands on `/` → clicks "Try it now" → lands on `/play` → answers up to 5 questions as guest → hits claim CTA. Monte lands on `/play` → cookie recognizes him → AskMePanel defaults to his account.
+
+### Phase 7 (queued): Charts
+
+Cash in the subhead promise ("Charts that track your progress").
+
+**Scope:**
+- **Where they live**: `/[user]/stats` or a tab on `/[user]`. Possibly mirrored on `/play` for guest-session stats.
+- **Three charts** (Recharts):
+  1. Daily activity bar — questions asked per day, last 30 days
+  2. Correct rate line — rolling 7-day %
+  3. Topic breakdown — horizontal bars or pie, questions per topic
+- **Data**: existing `questions` columns (`created_at`, `result`, `topic`, `difficulty`) — no schema changes needed.
+- **Empty states**: first-day-playing copy that doesn't feel broken.
+
+**Flesh out later:** correct-rate by difficulty, streak visualization, topic mastery heatmap.
 
 ---
 
@@ -71,11 +112,11 @@ TBD — Monte to populate after more dogfood with Su. Likely candidates from the
 
 **Skill coherence gap** — `ash-core/skills/quiz-me/SKILL.md` writes freeform questions to `users.json`; the web UI now generates MC for easy/medium. Skill should emit `options` + `correctIndex` for easy/medium so skill-written and web-written questions have the same shape.
 
-**Parked phases** (previously active, deprioritized in favor of UX-first direction):
+**Parked phases** (adjacent to current direction, not actively scheduled):
 
-- **Auth + multi-user writes** — HMAC-signed cookie sessions, `/login`/`/logout`, `POST /api/users/claim`, gate `/api/quiz/*` on session, claim flow UI on `/[user]?invite=XXX`, rate limit 20/user/day. Needed before Su can drive her own account.
-- **Guest flow + homepage demo** — `POST /api/quiz/try` (unauthed, no persist), homepage loads a random Monte question on arrival, "Try your own" → guest API → "create account to save" modal.
-- **Charts + voice + leaderboard** — `/[user]/stats` with Recharts (daily bar, 7-day correct-rate line, topic breakdown), voice input via Web Speech, homepage leaderboard, per-user accent color.
+- **Auth + multi-user writes** — HMAC-signed cookie sessions, `/login`/`/logout`, `POST /api/users/claim`, gate `/api/quiz/*` on session, claim flow UI on `/[user]?invite=XXX`, rate limit 20/user/day. Phase 6's soft-login cookie is the cheap precursor; full auth lands when Su or a third user needs private writes.
+- **Telegram / SMS reminders** — Monte's reminder want. Daily nudge with one question, or weekly digest. Likely leverages ash-core reminders infra.
+- **Voice + leaderboard + per-user accent** — voice input via Web Speech, homepage leaderboard, per-user accent color.
 - **Image mode + polish** — `medium=image` via nano-banana + Vercel Blob, OG cards per question, spaced repetition, custom domain.
 
 **Smaller ideas:**
