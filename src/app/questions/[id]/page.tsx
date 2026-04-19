@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getQuestionById } from "@/lib/users";
 import { BrandBar } from "@/components/BrandBar";
-import { BackButton } from "@/components/BackButton";
+import { SiteFooter } from "@/components/SiteFooter";
 import { notFound } from "next/navigation";
 
 const difficultyStyles: Record<string, string> = {
@@ -48,13 +48,6 @@ export default async function QuestionPage({
     <div className="flex min-h-screen flex-col">
       <BrandBar />
       <article className="mx-auto w-full max-w-2xl flex-1 px-6 pt-12 pb-16">
-        <BackButton
-          fallbackHref="/questions"
-          className="mb-8 inline-flex cursor-pointer items-center gap-1.5 text-sm text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
-        >
-          ← Back
-        </BackButton>
-
         <div className="mb-6 flex flex-wrap items-center gap-2">
           <span
             className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase ${difficultyStyles[q.difficulty] || ""}`}
@@ -146,14 +139,7 @@ export default async function QuestionPage({
         )}
       </article>
 
-      <footer className="border-t border-[var(--color-border)] py-8 text-center text-sm text-[var(--color-text-muted)]">
-        <BackButton
-          fallbackHref="/questions"
-          className="cursor-pointer hover:text-[var(--color-accent)]"
-        >
-          ← Back
-        </BackButton>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
