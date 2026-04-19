@@ -14,17 +14,19 @@ Four difficulty tiers stretch it from casual (easy = yes/no) to serious (xhard =
 
 ## Current State
 
-Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me). **Phases 1–4 shipped.**
+Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me). **Phases 1–5 shipped.**
 
 **Stack:** Next.js 16 + Tailwind 4, Neon Postgres (HTTP driver), Anthropic SDK direct (`claude-sonnet-4-6`), Zod validation, Vercel auto-deploy. Emerald-on-black editorial theme (Fraunces serif hero).
 
 **Routes:**
-- `/` — hero + AskMePanel + stat tiles (Users/Questions/Topics) + recent questions
+- `/` — marketing landing: rotating hero (two eyebrow+H1 pairs, 5s crossfade), stats row, pillar cards, recap CTA. No inline demo — "Try it now →" sends you to `/monte`.
 - `/users` — user cards + join card
-- `/[user]` — per-user log: serif name, inline stats, interests, paginated questions
+- `/[user]` — per-user log: serif name, inline stats, interests, paginated questions, AskMePanel inline
 - `/questions` — all questions, difficulty + topic filters, stats reflect filter state
 - `/questions/[id]` — question detail with attribution link back to `/[user]`
 - `/api/quiz/new` + `/api/quiz/grade` — Zod-validated, parameterized by username
+
+**Landing + chrome (Phase 5):** BrandBar top-left with top-right nav (Play → `/monte`, Users, Questions) on every route. No in-content back links — browser back + top nav cover navigation. `<Hero />` (client, rotating), `<StatsSection />`, `<PillarCards />`, `<RecapCTA />` anchor the landing. BRAND.md is the single source for copy.
 
 **Question mechanics (Phase 4):**
 - **Topic-scoped dedup** — last 20 questions on the picked topic passed to Claude with "do not repeat or paraphrase."
@@ -32,7 +34,7 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 - **Freeform (hard + xhard)** — unchanged; LLM grades with difficulty-specific rubrics.
 - **Discover mode** — topic picker has `random` (user's interests), `discover` (Claude picks fresh, excludes interests ∪ all past-quizzed topics), or a specific topic. Discover's picked topic is stored on the row, so the discovery pool keeps shrinking with play.
 
-**Shared infra:** `<QuestionList />`, `<Pagination />`, `<BrandBar compact />`, `<SiteFooter />`, `<BackButton />` (history-aware), 308 redirect `/:user/q/:id → /questions/:id`.
+**Shared infra:** `<QuestionList />`, `<Pagination />`, `<BrandBar />`, `<SiteFooter />`, 308 redirect `/:user/q/:id → /questions/:id`.
 
 **Data:** `users` + `questions` tables, seeded from `users.json`. 2 users (Monte claimed, Suvarcha unclaimed with invite `SU-CC23CA`), 11 interests. Skill at [ash-core/skills/quiz-me/SKILL.md](../ash-core/skills/quiz-me/SKILL.md) writes `users.json` + commits; `pnpm db:seed` rebuilds Postgres on demand.
 
@@ -61,35 +63,65 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 
 ## Phases
 
-### Phase 5 (active): Landing page redesign
+### Phase 6 (active): `/play` guest mode + soft login
 
-Now that the product mechanics are solid, make the landing page pull its weight as a marketing surface. Informed by [BRAND.md](./BRAND.md) (two ICPs, three pillars, rotating taglines). Spec: [specs/phase-5-landing.md](./specs/phase-5-landing.md) *(to be written)*.
+Landing is marketing. `/play` is the product surface. Give strangers a 5-question trial without an account; give claimed users a one-click entry that writes to their log.
 
-**Scope:**
-- **BrandBar moves to top-left** (was centered). Classic marketing-site anchor.
-- **Paired rotating eyebrow + H1.** Eyebrow swaps with the H1 as a unit. `For trivia nerds` ↔ `Trivia that knows what you love.` / `For curious minds` ↔ `Master the topics that matter to you.` 5s cadence, 500ms crossfade.
-- **Primary CTA button in hero**: `Try it now →`. In Phase 5 it anchors to the AskMePanel below (smooth scroll). In Phase 6 it switches to `/play`.
-- **Stats section** broken out of the tile row — bigger typography, own section, micro-captions under each number.
-- **Three pillar cards**: Personalized / Challenging / Tracked. One card per pillar, plain-language body copy from BRAND.md.
-- **Recap + CTA section** at the bottom: "Ready to get started?" with "Try it now →" + "Ask for an invite" buttons, plus two sub-cards linking to `/questions` and `/users`.
-- **AskMePanel stays on the landing** for Phase 5 (it's the inline demo the top CTA scrolls to). Moves to `/play` in Phase 6.
-- **BRAND.md "Copy by page" section** stays in sync as copy changes.
+**Design decisions (locked up front):**
 
-**Exit:** Landing scroll is a coherent marketing narrative (hero → stats → pillars → demo → proof → CTA). Every piece of copy traces to BRAND.md. Both ICPs (Su + Monte) feel spoken to.
-
-### Phase 6 (queued): `/play` guest mode + soft login
-
-Spin the demo out of the landing page into its own product surface with guest-mode trial.
+| Decision | Choice |
+|---|---|
+| Guest difficulty | **Medium only** (4-choice MC). Instant grade, no second LLM call. Cheap + fast for trial. |
+| Guest topics | **Curated 6-grid** (Roman history, pickleball, jazz, space exploration, AI, cooking) + free-text input for custom. |
+| Guest question API | `POST /api/quiz/try` — stateless. Returns `{ question, options, correctIndex, answerKey }` (correctIndex leaks on guest path; acceptable because no persistence). |
+| Guest counter | `localStorage: qm-trial-count` (0–5). Soft limit — bypass cost is low, real cap is Claude $. |
+| Guest dedup | `localStorage: qm-trial-topics[]` — the questions already shown this trial, passed to Claude as exclude list. |
+| Soft-login cookie | `qm-user=<username>`, 1 year, client-readable. Set via `?claim=<inviteCode>` on `/[user]` (user proves identity via invite code, no password yet). |
+| Claim CTA (end of trial) | Mailto invite for now (same as landing "Ask for an invite"). Self-serve signup is parked — ships with real auth. |
+| Phase 6 does NOT ship auth | No passwords, no HMAC sessions. Cookie is trust-based for Monte + Su. Full auth is a separate parked phase when third user lands. |
 
 **Scope:**
-- **New route `/play`** — dedicated quiz playground.
-- **Guest trial**: 5 free questions, no account needed. Counter visible (`1/5`, `2/5`, …). After 5, claim banner: "Want to keep your log? Claim your username →" → invite flow (or future self-serve signup).
-- **Soft-login cookie**: when a visitor has a known username stored in cookie, `/play` defaults to that account and writes to their log (no full auth yet — this is a personal-use cookie, upgradeable to HMAC-signed session later).
-- **`POST /api/quiz/try`** — guest variant of `/quiz/new`, no DB writes, ephemeral.
-- **Landing CTA flip**: hero + bottom "Try it now" buttons switch from `#ask` anchor to `/play`. AskMePanel removed from landing.
-- **Topic source for guests**: curated set of sample topics (e.g. Roman history, pickleball, jazz, space) so guests don't have to configure anything.
 
-**Exit:** Visitor lands on `/` → clicks "Try it now" → lands on `/play` → answers up to 5 questions as guest → hits claim CTA. Monte lands on `/play` → cookie recognizes him → AskMePanel defaults to his account.
+1. **New route `/play`** — server component, reads `qm-user` cookie
+   - Cookie + user exists → render AskMePanel defaulting to that account (current `/monte` behavior, moved here)
+   - No cookie → render `<GuestPlay>` component (new)
+
+2. **`<GuestPlay>` component** (new, client)
+   - Header: "You're in guest mode. Here's 5 questions on us."
+   - Counter chip: `2 / 5`
+   - Topic picker: 6-card curated grid + "or type a topic:" input
+   - Question flow: pick topic → see MC question → answer → see grade + answer key → "Next question →"
+   - After 5th answer: panel replaces with claim banner — "Hope you had fun. Want your own log? [Ask for an invite →]"
+
+3. **`POST /api/quiz/try`** (new API route)
+   - Body: Zod-validated `{ topic: string, prior: string[] }`
+   - Reuses existing `generationPrompt` with MC-medium schema
+   - Returns question + options + correctIndex + answerKey to client
+   - No DB writes, no user association
+
+4. **Claim-by-invite on `/[user]`** (soft login)
+   - New query param `?claim=<inviteCode>`
+   - If `inviteCode` matches the user's invite, set `qm-user=<username>` cookie + redirect to `/play`
+   - Invalid code → show normal user page with a small "Invalid code" toast
+   - This replaces the unbuilt claim UI stub for now
+
+5. **CTA flip on landing**
+   - Hero + RecapCTA `Try it now →`: `/monte` → `/play`
+   - BrandBar nav `Play`: `/monte` → `/play`
+   - BRAND.md Copy-by-page updated
+
+6. **Monte + Su bootstrap**
+   - Monte visits `/monte?claim=<his-code>` once → cookie set → all future `/play` visits write to his log
+   - Su can do the same with `SU-CC23CA` when she's ready
+
+**What already landed (pulled forward from Phase 5):**
+- AskMePanel removed from landing ✅
+- CTAs live on the landing pointing to a real surface (currently `/monte`) ✅
+- Top-nav Play link in place ✅
+
+**Exit:** Stranger lands on `/` → clicks Try it now → `/play` → gets 5 MC questions on curated topics → hits claim banner with invite CTA. Monte/Su click Play → cookie recognizes them → land on AskMePanel with their topics loaded, writes to their log.
+
+**Rough size:** 4–6 hours. One new route, one new component, one new API route, one `?claim=` handler, three CTA repoints.
 
 ### Phase 7 (queued): Charts
 
@@ -144,4 +176,4 @@ Cash in the subhead promise ("Charts that track your progress").
 
 ---
 
-*Updated: 2026-04-18*
+*Updated: 2026-04-19*
