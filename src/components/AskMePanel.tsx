@@ -72,6 +72,13 @@ const resultStyles: Record<Result, string> = {
   skipped: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
 };
 
+const resultCardStyles: Record<Result, string> = {
+  correct: "border-emerald-500/40 bg-emerald-500/10",
+  partial: "border-amber-500/40 bg-amber-500/10",
+  wrong: "border-red-500/40 bg-red-500/10",
+  skipped: "border-zinc-500/30 bg-zinc-500/5",
+};
+
 const resultLabels: Record<Result, string> = {
   correct: "Correct",
   partial: "Partial",
@@ -262,6 +269,10 @@ export function AskMePanel({
         grade: data.grade ?? null,
         answerKey: data.answerKey ?? "",
       });
+      // Auto-open the answer key on MC reveals so users learn from it.
+      // Freeform (hard/xhard) keeps it collapsed — the grade carries
+      // most of the signal there and the key can be long.
+      setShowAnswerKey(prev.options !== null);
       router.refresh();
     } catch (e) {
       setError(errMsg(e));
@@ -301,144 +312,135 @@ export function AskMePanel({
             </div>
 
             <p className="font-display mb-3 text-2xl leading-snug font-semibold text-[var(--color-text)] sm:text-3xl">
-              Quizzing you on{" "}
-              <span className="relative inline-block" ref={topicRef}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowTopic((v) => !v);
-                    setShowDifficulty(false);
-                  }}
-                  className="text-[var(--color-accent)] decoration-dotted underline-offset-[6px] transition-colors hover:text-[var(--color-accent-bright)] hover:underline"
-                  aria-expanded={showTopic}
-                  aria-haspopup="listbox"
-                >
-                  {topicLabel(topic)}
-                  <span className="ml-1 text-sm text-[var(--color-text-muted)]">
-                    {showTopic ? "▴" : "▾"}
-                  </span>
-                </button>
-                {showTopic && (
-                  <div
-                    role="listbox"
-                    className="absolute top-full left-1/2 z-20 mt-2 w-[22rem] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-hover)] p-3 text-sm shadow-2xl ring-1 ring-black/40"
+              <span className="block">Quizzing you on</span>
+              <span className="block">
+                <span className="relative inline-block" ref={topicRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTopic((v) => !v);
+                      setShowDifficulty(false);
+                    }}
+                    className="text-[var(--color-accent)] decoration-dotted underline-offset-[6px] transition-colors hover:text-[var(--color-accent-bright)] hover:underline"
+                    aria-expanded={showTopic}
+                    aria-haspopup="listbox"
                   >
-                    <div className="mb-2 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
-                      Pick a topic
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <TopicChip
-                        label="random"
-                        active={topic === ""}
-                        onClick={() => {
-                          persistTopic("");
-                          setShowTopic(false);
-                        }}
-                      />
-                      <TopicChip
-                        label="discover"
-                        active={topic === "discover"}
-                        title="Ash picks a fresh topic you haven't been quizzed on"
-                        onClick={() => {
-                          persistTopic("discover");
+                    {topicLabel(topic)}
+                    <span className="ml-1 text-sm text-[var(--color-text-muted)]">
+                      {showTopic ? "▴" : "▾"}
+                    </span>
+                  </button>
+                  {/* Desktop dropdown (sm+) */}
+                  {showTopic && (
+                    <div
+                      role="listbox"
+                      className="absolute top-full left-1/2 z-20 mt-2 hidden w-[22rem] -translate-x-1/2 rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-hover)] p-3 text-sm shadow-2xl ring-1 ring-black/40 sm:block"
+                    >
+                      <TopicPickerContent
+                        topic={topic}
+                        interests={interests}
+                        recent={recent}
+                        onPick={(next) => {
+                          persistTopic(next);
                           setShowTopic(false);
                         }}
                       />
                     </div>
-
-                    {interests.length > 0 && (
-                      <>
-                        <div className="mt-4 mb-2 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
-                          Your topics
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {interests.map((i) => (
-                            <TopicChip
-                              key={i.name}
-                              label={i.name}
-                              active={topic === i.name}
-                              onClick={() => {
-                                persistTopic(i.name);
-                                setShowTopic(false);
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-
-                    {recent.length > 0 && (
-                      <>
-                        <div className="mt-4 mb-2 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
-                          Recent
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {recent.map((name) => (
-                            <TopicChip
-                              key={name}
-                              label={name}
-                              active={topic === name}
-                              onClick={() => {
-                                persistTopic(name);
-                                setShowTopic(false);
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </span>{" "}
-              with{" "}
-              <span className="relative inline-block" ref={diffRef}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowDifficulty((v) => !v);
-                    setShowTopic(false);
-                  }}
-                  className="text-[var(--color-accent)] decoration-dotted underline-offset-[6px] transition-colors hover:text-[var(--color-accent-bright)] hover:underline"
-                  aria-expanded={showDifficulty}
-                  aria-haspopup="listbox"
-                >
-                  {difficultyLabels[difficulty]}
-                  <span className="ml-1 text-sm text-[var(--color-text-muted)]">
-                    {showDifficulty ? "▴" : "▾"}
-                  </span>
-                </button>
-                {showDifficulty && (
-                  <div
-                    role="listbox"
-                    className="absolute top-full left-1/2 z-20 mt-2 w-56 max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-hidden rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-hover)] p-1 text-sm shadow-2xl ring-1 ring-black/40"
+                  )}
+                </span>{" "}
+                with
+              </span>
+              <span className="block">
+                <span className="relative inline-block" ref={diffRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDifficulty((v) => !v);
+                      setShowTopic(false);
+                    }}
+                    className="text-[var(--color-accent)] decoration-dotted underline-offset-[6px] transition-colors hover:text-[var(--color-accent-bright)] hover:underline"
+                    aria-expanded={showDifficulty}
+                    aria-haspopup="listbox"
                   >
-                    {DIFFICULTIES.map((d) => (
-                      <button
-                        key={d}
-                        type="button"
-                        role="option"
-                        aria-selected={difficulty === d}
-                        onClick={() => {
-                          persistDifficulty(d);
-                          setShowDifficulty(false);
-                        }}
-                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors ${
-                          difficulty === d
-                            ? "bg-[var(--color-accent-wash)] text-[var(--color-accent)]"
-                            : "text-[var(--color-text-dim)] hover:bg-[var(--color-surface)]"
-                        }`}
-                      >
-                        <span className="font-medium">
-                          {difficultyLabels[d]}
-                        </span>
-                        <DifficultyHint d={d} />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </span>{" "}
-              difficulty.
+                    {difficultyLabels[difficulty]}
+                    <span className="ml-1 text-sm text-[var(--color-text-muted)]">
+                      {showDifficulty ? "▴" : "▾"}
+                    </span>
+                  </button>
+                  {showDifficulty && (
+                    <div
+                      role="listbox"
+                      className="absolute top-full left-1/2 z-20 mt-2 w-56 max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-hidden rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-hover)] p-1 text-sm shadow-2xl ring-1 ring-black/40"
+                    >
+                      {DIFFICULTIES.map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          role="option"
+                          aria-selected={difficulty === d}
+                          onClick={() => {
+                            persistDifficulty(d);
+                            setShowDifficulty(false);
+                          }}
+                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors ${
+                            difficulty === d
+                              ? "bg-[var(--color-accent-wash)] text-[var(--color-accent)]"
+                              : "text-[var(--color-text-dim)] hover:bg-[var(--color-surface)]"
+                          }`}
+                        >
+                          <span className="font-medium">
+                            {difficultyLabels[d]}
+                          </span>
+                          <DifficultyHint d={d} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </span>{" "}
+                difficulty.
+              </span>
             </p>
+
+            {/* Mobile bottom-sheet topic picker */}
+            {showTopic && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Pick a topic"
+                className="fixed inset-0 z-40 flex items-end sm:hidden"
+              >
+                <div
+                  className="absolute inset-0 bg-black/70"
+                  onClick={() => setShowTopic(false)}
+                  aria-hidden
+                />
+                <div className="relative max-h-[85vh] w-full overflow-auto rounded-t-2xl border-x border-t border-[var(--color-border-strong)] bg-[var(--color-surface-hover)] p-5 shadow-2xl">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h4 className="text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+                      Pick a topic
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setShowTopic(false)}
+                      aria-label="Close"
+                      className="text-lg text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <TopicPickerContent
+                    topic={topic}
+                    interests={interests}
+                    recent={recent}
+                    onPick={(next) => {
+                      persistTopic(next);
+                      setShowTopic(false);
+                    }}
+                    hideHeading
+                  />
+                </div>
+              </div>
+            )}
 
             {subtitle && (
               <p className="mb-6 text-sm text-[var(--color-text-muted)]">
@@ -605,11 +607,14 @@ export function AskMePanel({
             </p>
 
             {state.userAnswer ? (
-              <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/60 p-4">
-                <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
-                    Your answer
-                  </div>
+              <div
+                className={`mb-4 rounded-lg border p-4 ${
+                  state.result
+                    ? resultCardStyles[state.result]
+                    : "border-[var(--color-border)] bg-[var(--color-surface)]/60"
+                }`}
+              >
+                <div className="mb-1 flex flex-wrap items-center gap-2">
                   {state.thoughtfulnessScore !== null ? (
                     <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-accent-glow)] px-2 py-0.5 text-[0.7rem] font-semibold text-[var(--color-accent)]">
                       {state.thoughtfulnessScore}/5 thoughtfulness
@@ -621,6 +626,9 @@ export function AskMePanel({
                       {resultLabels[state.result]}
                     </span>
                   ) : null}
+                  <div className="text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+                    Your answer
+                  </div>
                 </div>
                 <p className="text-sm whitespace-pre-wrap text-[var(--color-text-dim)]">
                   {state.userAnswer}
@@ -675,6 +683,79 @@ export function AskMePanel({
         )}
       </div>
     </section>
+  );
+}
+
+function TopicPickerContent({
+  topic,
+  interests,
+  recent,
+  onPick,
+  hideHeading = false,
+}: {
+  topic: string;
+  interests: Interest[];
+  recent: string[];
+  onPick: (name: string) => void;
+  hideHeading?: boolean;
+}) {
+  return (
+    <>
+      {!hideHeading && (
+        <div className="mb-2 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+          Pick a topic
+        </div>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <TopicChip
+          label="random"
+          active={topic === ""}
+          onClick={() => onPick("")}
+        />
+        <TopicChip
+          label="discover"
+          active={topic === "discover"}
+          title="Ash picks a fresh topic you haven't been quizzed on"
+          onClick={() => onPick("discover")}
+        />
+      </div>
+
+      {interests.length > 0 && (
+        <>
+          <div className="mt-4 mb-2 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+            Your topics
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {interests.map((i) => (
+              <TopicChip
+                key={i.name}
+                label={i.name}
+                active={topic === i.name}
+                onClick={() => onPick(i.name)}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {recent.length > 0 && (
+        <>
+          <div className="mt-4 mb-2 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+            Recent
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {recent.map((name) => (
+              <TopicChip
+                key={name}
+                label={name}
+                active={topic === name}
+                onClick={() => onPick(name)}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </>
   );
 }
 
