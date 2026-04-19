@@ -9,6 +9,7 @@ const bodySchema = z.object({
   username: z.string().min(1).regex(/^[a-z0-9_-]+$/, "invalid username"),
   questionId: z.string().min(1),
   userAnswer: z.string().optional().default(""),
+  selectedIndex: z.number().int().min(0).optional(),
 });
 
 const easyMedHardGradeSchema = z.object({
@@ -36,11 +37,11 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const { username, questionId, userAnswer: userAnswerRaw } = parsed.data;
-  const userAnswer = userAnswerRaw.trim();
+  const { username, questionId, selectedIndex } = parsed.data;
+  const userAnswerRaw = parsed.data.userAnswer;
 
   const rows = await sql`
-    select id, username, difficulty, question, answer_key, status
+    select id, username, difficulty, question, answer_key, status, options, correct_index
     from questions where id = ${questionId}
   `;
   if (rows.length === 0) {
@@ -57,7 +58,60 @@ export async function POST(req: Request) {
     );
   }
 
+  const difficulty = q.difficulty as Difficulty;
+  const options = (q.options as string[] | null) ?? null;
+  const correctIndex = (q.correct_index as number | null) ?? null;
   const now = new Date().toISOString();
+
+  // Multiple-choice path: instant grading for easy + medium questions that
+  // were generated with options. No LLM call — direct index comparison.
+  if (options && correctIndex !== null) {
+    // Skip: no selection made.
+    if (selectedIndex === undefined) {
+      await sql`
+        update questions set
+          user_answer = null,
+          result      = 'skipped',
+          status      = 'skipped',
+          graded_at   = ${now}
+        where id = ${questionId}
+      `;
+      return NextResponse.json({
+        result: "skipped",
+        grade: null,
+        thoughtfulnessScore: null,
+        answerKey: q.answer_key,
+      });
+    }
+
+    if (selectedIndex < 0 || selectedIndex >= options.length) {
+      return NextResponse.json(
+        { error: "selectedIndex out of range" },
+        { status: 400 },
+      );
+    }
+
+    const picked = options[selectedIndex];
+    const result: Result = selectedIndex === correctIndex ? "correct" : "wrong";
+    await sql`
+      update questions set
+        user_answer = ${picked},
+        result      = ${result},
+        grade       = null,
+        status      = 'graded',
+        graded_at   = ${now}
+      where id = ${questionId}
+    `;
+    return NextResponse.json({
+      result,
+      grade: null,
+      thoughtfulnessScore: null,
+      answerKey: q.answer_key,
+    });
+  }
+
+  // Freeform path: legacy easy/medium + all hard + xhard. LLM grading.
+  const userAnswer = userAnswerRaw.trim();
 
   if (userAnswer === "") {
     await sql`
@@ -75,8 +129,6 @@ export async function POST(req: Request) {
       answerKey: q.answer_key,
     });
   }
-
-  const difficulty = q.difficulty as Difficulty;
 
   try {
     const { system, user } = gradingPrompt(

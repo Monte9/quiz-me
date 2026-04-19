@@ -16,6 +16,8 @@ export interface Question {
   topic: string;
   question: string;
   answerKey: string;
+  options: string[] | null;
+  correctIndex: number | null;
   userAnswer: string | null;
   result: Result | null;
   thoughtfulnessScore: number | null;
@@ -48,6 +50,8 @@ function mapQuestion(row: Record<string, unknown>): Question {
     topic: row.topic as string,
     question: row.question as string,
     answerKey: row.answer_key as string,
+    options: (row.options as string[] | null) ?? null,
+    correctIndex: (row.correct_index as number | null) ?? null,
     userAnswer: (row.user_answer as string | null) ?? null,
     result: (row.result as Result | null) ?? null,
     thoughtfulnessScore: (row.thoughtfulness_score as number | null) ?? null,

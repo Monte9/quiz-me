@@ -13,6 +13,7 @@ type State =
       difficulty: Difficulty;
       topic: string;
       question: string;
+      options: string[] | null;
     }
   | {
       kind: "grading";
@@ -20,6 +21,7 @@ type State =
       difficulty: Difficulty;
       topic: string;
       question: string;
+      options: string[] | null;
     }
   | {
       kind: "revealed";
@@ -66,6 +68,7 @@ interface NewQuizResponse {
   difficulty: Difficulty;
   topic: string;
   question: string;
+  options: string[] | null;
 }
 
 interface GradeResponse {
@@ -123,6 +126,7 @@ export function AskMePanel({
         difficulty: data.difficulty,
         topic: data.topic,
         question: data.question,
+        options: data.options ?? null,
       });
     } catch (e) {
       setError(errMsg(e));
@@ -130,7 +134,7 @@ export function AskMePanel({
     }
   }
 
-  async function submitAnswer(payloadAnswer: string) {
+  async function submit(args: { userAnswer?: string; selectedIndex?: number }) {
     if (state.kind !== "asking") return;
     setError(null);
     const prev = state;
@@ -140,6 +144,7 @@ export function AskMePanel({
       difficulty: state.difficulty,
       topic: state.topic,
       question: state.question,
+      options: state.options,
     });
     try {
       const res = await fetch("/api/quiz/grade", {
@@ -148,19 +153,28 @@ export function AskMePanel({
         body: JSON.stringify({
           username,
           questionId: prev.questionId,
-          userAnswer: payloadAnswer,
+          ...(args.selectedIndex !== undefined
+            ? { selectedIndex: args.selectedIndex }
+            : { userAnswer: args.userAnswer ?? "" }),
         }),
       });
       const data = (await res.json()) as Partial<GradeResponse> & {
         error?: string;
       };
       if (!res.ok) throw new Error(data.error ?? "grading failed");
+
+      // Compute displayable userAnswer for the reveal screen.
+      const displayedAnswer =
+        args.selectedIndex !== undefined && prev.options
+          ? prev.options[args.selectedIndex]
+          : (args.userAnswer ?? "");
+
       setState({
         kind: "revealed",
         difficulty: prev.difficulty,
         topic: prev.topic,
         question: prev.question,
-        userAnswer: payloadAnswer,
+        userAnswer: displayedAnswer,
         result: data.result ?? null,
         thoughtfulnessScore: data.thoughtfulnessScore ?? null,
         grade: data.grade ?? null,
@@ -309,41 +323,44 @@ export function AskMePanel({
               {state.question}
             </p>
 
-            {state.difficulty === "easy" ? (
+            {/* Multiple-choice path: easy (2 opts) + medium (4 opts) */}
+            {state.options ? (
               state.kind === "asking" ? (
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => submitAnswer("yes")}
-                    className="inline-flex min-w-28 items-center justify-center rounded-full bg-[var(--color-accent)] px-6 py-3 text-base font-semibold text-[var(--color-bg)] transition-all hover:bg-[var(--color-accent-bright)] hover:shadow-[0_0_30px_var(--color-accent-glow)]"
-                  >
-                    Yes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => submitAnswer("no")}
-                    className="inline-flex min-w-28 items-center justify-center rounded-full bg-[var(--color-accent)] px-6 py-3 text-base font-semibold text-[var(--color-bg)] transition-all hover:bg-[var(--color-accent-bright)] hover:shadow-[0_0_30px_var(--color-accent-glow)]"
-                  >
-                    No
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => submitAnswer("")}
-                    className="inline-flex items-center justify-center rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-5 py-3 text-sm font-semibold text-[var(--color-text-dim)] transition-all hover:border-[var(--color-accent-dim)] hover:text-[var(--color-text)]"
-                  >
-                    Skip
-                  </button>
+                <div className="space-y-2">
+                  {state.options.map((opt, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => submit({ selectedIndex: i })}
+                      className="group block w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-left text-sm font-medium text-[var(--color-text)] transition-all hover:-translate-y-0.5 hover:border-[var(--color-accent-dim)] hover:bg-[var(--color-accent-wash)] hover:shadow-[0_0_20px_var(--color-accent-glow)]"
+                    >
+                      <span className="mr-3 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[var(--color-border-strong)] text-[0.7rem] font-semibold text-[var(--color-text-muted)] transition-colors group-hover:border-[var(--color-accent)] group-hover:text-[var(--color-accent)]">
+                        {String.fromCharCode(65 + i)}
+                      </span>
+                      {opt}
+                    </button>
+                  ))}
+                  <div className="flex pt-1">
+                    <button
+                      type="button"
+                      onClick={() => submit({})}
+                      className="inline-flex items-center justify-center rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-5 py-2 text-xs font-semibold text-[var(--color-text-dim)] transition-all hover:border-[var(--color-accent-dim)] hover:text-[var(--color-text)]"
+                    >
+                      Skip
+                    </button>
+                  </div>
                   {error && (
-                    <p className="mt-2 w-full text-sm text-red-400">{error}</p>
+                    <p className="mt-2 text-sm text-red-400">{error}</p>
                   )}
                 </div>
               ) : (
                 <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-accent)]" />
-                  Ash is grading…
+                  Checking…
                 </div>
               )
             ) : (
+              /* Freeform path: hard, xhard, and legacy easy/medium without options */
               <>
                 <textarea
                   value={answer}
@@ -362,7 +379,7 @@ export function AskMePanel({
                   <div className="mt-4 flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => submitAnswer(answer)}
+                      onClick={() => submit({ userAnswer: answer })}
                       disabled={answer.trim() === ""}
                       className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-bg)] transition-all hover:bg-[var(--color-accent-bright)] hover:shadow-[0_0_30px_var(--color-accent-glow)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none"
                     >
@@ -370,7 +387,7 @@ export function AskMePanel({
                     </button>
                     <button
                       type="button"
-                      onClick={() => submitAnswer("")}
+                      onClick={() => submit({ userAnswer: "" })}
                       className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text-dim)] transition-all hover:border-[var(--color-accent-dim)] hover:text-[var(--color-text)]"
                     >
                       Skip

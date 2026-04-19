@@ -22,6 +22,8 @@ const genOutputSchema = z.object({
   question: z.string().min(1),
   answerKey: z.string().min(1),
   slug: z.string().optional().default(""),
+  options: z.array(z.string().min(1)).optional(),
+  correctIndex: z.number().int().min(0).optional(),
 });
 
 export async function POST(req: Request) {
@@ -71,27 +73,55 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "generation failed" }, { status: 502 });
   }
 
+  // Validate multiple-choice shape for easy + medium.
+  let options: string[] | null = null;
+  let correctIndex: number | null = null;
+  if (difficulty === "easy" || difficulty === "medium") {
+    const expectedLen = difficulty === "easy" ? 2 : 4;
+    if (
+      !gen.options ||
+      gen.options.length !== expectedLen ||
+      gen.correctIndex === undefined ||
+      gen.correctIndex < 0 ||
+      gen.correctIndex >= expectedLen
+    ) {
+      console.error("claude returned invalid options payload", {
+        difficulty,
+        options: gen.options,
+        correctIndex: gen.correctIndex,
+      });
+      return NextResponse.json({ error: "generation returned invalid options" }, { status: 502 });
+    }
+    options = gen.options;
+    correctIndex = gen.correctIndex;
+  }
+
   const now = new Date();
   const id = `${idPrefix(now)}-${slugify(gen.slug || topic)}`;
 
   await sql`
     insert into questions (
       id, username, difficulty, medium, topic, question, answer_key,
+      options, correct_index,
       user_answer, result, thoughtfulness_score, image_path, grade,
       status, created_at, graded_at
     )
     values (
       ${id}, ${username}, ${difficulty}, 'text', ${topic},
       ${gen.question}, ${gen.answerKey},
+      ${options ? JSON.stringify(options) : null}::jsonb, ${correctIndex},
       null, null, null, null, null,
       'pending', ${now.toISOString()}, null
     )
   `;
 
+  // Return options so the UI can render choices; correctIndex is never leaked
+  // — the client submits selectedIndex and the server validates.
   return NextResponse.json({
     questionId: id,
     difficulty,
     topic,
     question: gen.question,
+    options,
   });
 }

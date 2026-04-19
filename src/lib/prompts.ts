@@ -2,27 +2,28 @@ import type { Difficulty } from "@/lib/users";
 
 const SHARED_GEN_SYSTEM = `You are Ash, quizzing Monte on topics he's chosen.
 One question per call. Tight. Interesting. Never repeat a question he's already been asked.
-Respond ONLY with a single JSON object. No prose. No code fences. No preamble.
-The JSON must have exactly these keys: "question" (string), "answerKey" (string), "slug" (short kebab-case, 2–4 words, describes the answer).`;
+Respond ONLY with a single JSON object. No prose. No code fences. No preamble.`;
 
 const DIFFICULTY_RULES: Record<Difficulty, string> = {
-  easy: `Shape: binary yes/no question. The answer is "yes" or "no".
+  easy: `Shape: binary yes/no question.
 Example: "Did Julius Caesar cross the Rubicon in 49 BCE?"
-answerKey: "Yes/No." + one line of context (who/what/when/why).`,
+JSON keys (exact): "question" (string), "options" (array of exactly ["Yes", "No"]), "correctIndex" (0 for Yes, 1 for No), "answerKey" (one line of context — who/what/when/why — no need to restate Yes/No), "slug" (short kebab-case, 2–4 words).`,
 
-  medium: `Shape: one-word answer. A name, place, animal, thing, or short phrase.
-Example: "Which Mauryan emperor built the Sanchi Stupa?"
-answerKey: The answer + 2–4 sentences of context — the chain of facts that lead to it.`,
+  medium: `Shape: multiple choice with exactly 4 options, one correct.
+The options should be plausible — all from the same category/era/domain, so the wrong ones are believable distractors, not obvious throwaways.
+Example question: "Which Mauryan emperor built the Sanchi Stupa?"
+Example options: ["Chandragupta", "Bindusara", "Ashoka", "Dasharatha"]
+JSON keys (exact): "question" (string), "options" (array of exactly 4 strings), "correctIndex" (0-3, index of the correct option), "answerKey" (2–4 sentences of context — the chain of facts that lead to the answer), "slug" (short kebab-case, 2–4 words).`,
 
   hard: `Shape: a short-essay concept question. "How does X work?" or "Why does Y happen?"
 Example: "How does a transformer model's attention mechanism actually work?"
-answerKey: A rigorous 5–8 sentence reference answer — what a correct, well-informed explanation would cover. Include the concepts that separate a B+ answer from an A+ one.`,
+JSON keys (exact): "question" (string), "answerKey" (a rigorous 5–8 sentence reference answer — what a correct, well-informed explanation would cover, including the concepts that separate a B+ from an A+), "slug" (short kebab-case, 2–4 words).`,
 
   xhard: `Shape: propose a solution to an unsolved real-world problem.
 CRITICAL: the "question" field MUST include 1–2 paragraphs of context before asking the actual question.
 Context paragraphs describe: current state of the problem, what's been tried, who's tried it, why approaches have stalled.
 Then end with the direct ask, e.g. "What approach would you propose, and why?"
-answerKey: A "reference framing" — not a single correct answer, but 5–8 sentences describing the dimensions a strong proposal would consider (input variables, tradeoffs, stakeholders, second-order effects, failure modes).`,
+JSON keys (exact): "question" (string), "answerKey" (a "reference framing" — 5–8 sentences describing the dimensions a strong proposal would consider: input variables, tradeoffs, stakeholders, second-order effects, failure modes), "slug" (short kebab-case, 2–4 words).`,
 };
 
 export function generationPrompt(
