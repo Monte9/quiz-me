@@ -14,29 +14,27 @@ Four difficulty tiers stretch it from casual (easy = yes/no) to serious (xhard =
 
 ## Current State
 
-Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me). **Phases 1–3 shipped.**
+Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me). **Phases 1–4 shipped.**
 
 **Stack:** Next.js 16 + Tailwind 4, Neon Postgres (HTTP driver), Anthropic SDK direct (`claude-sonnet-4-6`), Zod validation, Vercel auto-deploy. Emerald-on-black editorial theme (Fraunces serif hero).
 
 **Routes:**
-- `/` — hero + AskMePanel + linked stat tiles (Users/Questions/Topics) + recent questions
+- `/` — hero + AskMePanel + stat tiles (Users/Questions/Topics) + recent questions
 - `/users` — user cards + join card
-- `/[user]` — per-user log: serif name, inline stats (quizzes / streak / correct / top topic), interests, paginated question grid
-- `/questions` — all questions, difficulty + topic filters, 3-tile stats reflecting filter state, paginated
-- `/questions/[id]` — question detail with attribution link back to `/@user`
+- `/[user]` — per-user log: serif name, inline stats, interests, paginated questions
+- `/questions` — all questions, difficulty + topic filters, stats reflect filter state
+- `/questions/[id]` — question detail with attribution link back to `/[user]`
 - `/api/quiz/new` + `/api/quiz/grade` — Zod-validated, parameterized by username
 
-**Shared infra:**
-- `<QuestionList />` — one grid for homepage / `/questions` / `/[user]`
-- `<Pagination />` — generic, callback-driven
-- `<BrandBar compact />` — tighter variant on non-home pages
-- `<SiteFooter />` — persistent Home · Users · Questions nav
-- `<BackButton />` — history-aware with fallback href
-- 308 redirect `/:user/q/:id → /questions/:id` for backward compat
+**Question mechanics (Phase 4):**
+- **Topic-scoped dedup** — last 20 questions on the picked topic passed to Claude with "do not repeat or paraphrase."
+- **Multiple choice (easy + medium)** — easy = binary Yes/No, medium = 4 plausible distractors from same category/era. `options jsonb` + `correct_index int` on questions (migration 002). Grading is **instant** (direct index compare, no LLM call); `correctIndex` never leaves the server.
+- **Freeform (hard + xhard)** — unchanged; LLM grades with difficulty-specific rubrics.
+- **Discover mode** — topic picker has `random` (user's interests), `discover` (Claude picks fresh, excludes interests ∪ all past-quizzed topics), or a specific topic. Discover's picked topic is stored on the row, so the discovery pool keeps shrinking with play.
 
-**Data:** `users` + `questions` tables, seeded from `users.json`. 2 users (Monte claimed, Suvarcha unclaimed with invite `SU-CC23CA`), 11 interests, ~33 questions. Skill at [ash-core/skills/quiz-me/SKILL.md](../ash-core/skills/quiz-me/SKILL.md) writes `users.json` + commits; `pnpm db:seed` rebuilds Postgres on demand.
+**Shared infra:** `<QuestionList />`, `<Pagination />`, `<BrandBar compact />`, `<SiteFooter />`, `<BackButton />` (history-aware), 308 redirect `/:user/q/:id → /questions/:id`.
 
-**De-monte'd:** hardcoded `"monte"` gone from API routes, AskMePanel, UserCard, question URLs. Auth plumbing is ready.
+**Data:** `users` + `questions` tables, seeded from `users.json`. 2 users (Monte claimed, Suvarcha unclaimed with invite `SU-CC23CA`), 11 interests. Skill at [ash-core/skills/quiz-me/SKILL.md](../ash-core/skills/quiz-me/SKILL.md) writes `users.json` + commits; `pnpm db:seed` rebuilds Postgres on demand.
 
 ---
 
@@ -44,69 +42,54 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 
 | # | Decision | Choice |
 |---|---|---|
-| 1 | Storage | **Neon Postgres** (runtime truth); `users.json` = seed + version-controlled snapshot |
+| 1 | Storage | **Neon Postgres** (runtime truth); `users.json` = seed + versioned snapshot |
 | 2 | Auth | Plain-text password, HMAC-signed cookie session (no library). Deferred. |
 | 3 | Invite flow | Skill generates + commits invite code; URL `/[user]?invite=<code>` |
-| 4 | Routing | `/` = landing; `/users`, `/[user]`, `/questions`, `/questions/[id]` |
-| 5 | Public vs private | All browsing public. Ask/answer/claim requires session when auth lands. |
+| 4 | Routing | `/` landing; `/users`, `/[user]`, `/questions`, `/questions/[id]` |
+| 5 | Public vs private | All browsing public. Ask/answer/claim gated on session when auth lands. |
 | 6 | Claude API | Serverless only; `ANTHROPIC_API_KEY` in Vercel env |
-| 7 | Voice | Web Speech API later; v1 = text + Y/N buttons |
+| 7 | Voice | Web Speech API later; v1 = text + buttons |
 | 8 | Rate limit | 20 quizzes/user/day (with auth) |
-| 9 | Skill writes | `users.json` only; Postgres is runtime DB; no dual-write |
+| 9 | Skill writes | `users.json` only; no dual-write |
 | 10 | LLM SDK | `@anthropic-ai/sdk` direct |
 | 11 | Validation | **Zod** for API bodies + Claude output schemas |
+| 12 | Dedup scope | Topic-scoped, last 20 questions |
+| 13 | Grading path | Instant index-compare for easy/medium MC; LLM for hard/xhard |
+| 14 | Discover scope | Excludes user's interests AND every past-quizzed topic |
 
 ---
 
 ## Phases
 
-### Phase 4 (active): Question mechanics + quality
-
-Real-world testing with Su over brunch surfaced three things that need to land before scaling to more users. Quality pass on what a question actually *feels like*.
-
-- **P0 — Dedupe generated questions.** Questions repeat within a topic. When calling `/api/quiz/new`, pass the user's recent questions (last N per topic, or all in that topic) to Claude; prompt explicitly excludes them. Doesn't need to be perfect — reducing repeat rate is the goal.
-- **P1 — Multiple choice for medium.** Medium as freeform text is too hard; Su struggled. Rebalance:
-  - Easy = yes/no *(unchanged)*
-  - **Medium = 4 choices, 1 correct** *(new)*
-  - Hard = freeform text *(unchanged — already correct-graded)*
-  - xHard = freeform thoughtfulness *(unchanged)*
-  - DB: add `options` jsonb column on `questions` (nullable; only populated for new multiple-choice mediums). Existing mediums stay freeform (grandfathered).
-  - UI: radio-style option selection in AskMePanel for medium; click submits.
-  - Grading: direct comparison to correct index, no LLM call needed (speed + cost win).
-- **P1 — Discover vs random topic.** Split the current "random" mode into two:
-  - `random` — picks from user's interests *(current behavior, renamed if needed)*
-  - `discover` — Claude picks any topic, unconstrained by interests. Expands the log into new territory.
-  - AskMePanel topic dropdown gets "Discover" as a third option alongside specific topics and Random.
-
-**Exit:** No repeat questions on 10 consecutive gens within a topic; medium feels guessable instead of punishing; `discover` surfaces a topic Monte hasn't listed as an interest.
-
 ### Phase 5 (queued): UX polish round 2
 
-TBD — more polish items surfacing from Su's testing. Monte will fill this in after Phase 4 ships.
+TBD — Monte to populate after more dogfood with Su. Likely candidates from the backlog: prev/next nav on question detail, topic display names, skill ↔ web MC coherence.
 
 ---
 
 ## Backlog
 
+**Skill coherence gap** — `ash-core/skills/quiz-me/SKILL.md` writes freeform questions to `users.json`; the web UI now generates MC for easy/medium. Skill should emit `options` + `correctIndex` for easy/medium so skill-written and web-written questions have the same shape.
+
 **Parked phases** (previously active, deprioritized in favor of UX-first direction):
 
-- **Auth + multi-user writes** — HMAC-signed cookie sessions, `/login`/`/logout`, `POST /api/users/claim`, gate `/api/quiz/*` on session, claim flow UI on `/[user]?invite=XXX`, rate limit 20/user/day. Needed before Su can drive her own account; currently the skill writes for her.
-- **Guest flow + homepage demo** — `POST /api/quiz/try` (unauthed, no persist), homepage loads a random Monte question on arrival, "Try your own" → guest API → "create account to save" modal. Turns the homepage into a live demo.
-- **Charts + voice + leaderboard** — `/[user]/stats` with Recharts (daily bar, 7-day correct-rate line, topic breakdown), voice input via Web Speech, homepage leaderboard (streak / correct-rate / total), per-user accent color.
-- **Image mode + polish** — `medium=image` via nano-banana + Vercel Blob, OG cards per question, spaced repetition (`result=wrong` resurfaces at 3/7/30 days), custom domain.
+- **Auth + multi-user writes** — HMAC-signed cookie sessions, `/login`/`/logout`, `POST /api/users/claim`, gate `/api/quiz/*` on session, claim flow UI on `/[user]?invite=XXX`, rate limit 20/user/day. Needed before Su can drive her own account.
+- **Guest flow + homepage demo** — `POST /api/quiz/try` (unauthed, no persist), homepage loads a random Monte question on arrival, "Try your own" → guest API → "create account to save" modal.
+- **Charts + voice + leaderboard** — `/[user]/stats` with Recharts (daily bar, 7-day correct-rate line, topic breakdown), voice input via Web Speech, homepage leaderboard, per-user accent color.
+- **Image mode + polish** — `medium=image` via nano-banana + Vercel Blob, OG cards per question, spaced repetition, custom domain.
 
 **Smaller ideas:**
 
-- **Topic display names** — `displayName` field on interests; UI falls back to title-cased slug
 - **Prev/next nav on question detail** — fast browse from `/questions`
+- **Topic display names** — `displayName` on interests; UI falls back to title-cased slug
+- **MC grading transparency** — when user picks wrong, optional one-liner explaining the right answer (one LLM call per wrong MC)
 - **Shared questions** — "question of the day" all users see; compare answers
 - **Admin panel** — Monte generates invites from web UI (skill-only today)
 - **Topic hierarchy** — `history/roman`, `ai/transformers`
 - **Session mode** — "quiz me 5 hard" → batch of 5
 - **Export wrong answers to Anki**
-- **Difficulty auto-calibration per topic** — Ash bumps `medium indian-mythology` → `hard` when you're crushing it
+- **Difficulty auto-calibration per topic** — bump `medium X` → `hard` when you're crushing it
 - **Bcrypt passwords** once > 2 users
-- **Invite-code resend** if lost
 - **Shareable grade cards** — OG image per question for social
 - **Weekly recap email** — streak, correct-rate, top-missed topic
 
@@ -114,9 +97,6 @@ TBD — more polish items surfacing from Su's testing. Monte will fill this in a
 
 ## Open Questions
 
-- **Dedup scope** — last N questions per topic (topic-scoped) or last N globally? Topic-scoped is more permissive (you can get a Roman question even if one was just asked about pickleball). Gut: topic-scoped.
-- **Multiple-choice grading transparency** — when the user picks wrong, show correct answer + optional Ash-written explanation? Adds one LLM call but preserves the "learning from being graded" feeling. Cheap to keep; consider.
-- **Discover safety rails** — `discover` picks any topic. Should it skip topics already in the user's list (pure novelty)? Or allow overlap (sometimes surprise you with a pickleball question unprompted)?
 - **xhard thoughtfulness rubric** — what separates 3 from 4 from 5? Short scoring guide needed in SKILL.md before first xhard runs.
 - **Image-response questions** — for `medium=image`, does the user upload a drawing/photo, or does Ash generate and ask about it?
 - **Suvarcha's interests** — claim flow asks for 3–5 interests right after password set (when auth lands).
