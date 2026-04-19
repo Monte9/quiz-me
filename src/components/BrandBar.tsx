@@ -2,10 +2,14 @@ import Link from "next/link";
 
 export function BrandBar({ compact = false }: { compact?: boolean } = {}) {
   return (
-    <div className={compact ? "pt-5" : "pt-8"}>
+    <header
+      className={`mx-auto w-full max-w-7xl px-6 ${
+        compact ? "pt-5" : "pt-6 sm:pt-8"
+      }`}
+    >
       <Link
         href="/"
-        className={`group mx-auto block w-fit text-center font-semibold uppercase ${
+        className={`group inline-block font-semibold uppercase ${
           compact
             ? "text-[0.6rem] tracking-[0.3em]"
             : "text-[0.7rem] tracking-[0.35em]"
@@ -18,6 +22,6 @@ export function BrandBar({ compact = false }: { compact?: boolean } = {}) {
           Me
         </span>
       </Link>
-    </div>
+    </header>
   );
 }

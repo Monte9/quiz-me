@@ -143,6 +143,31 @@ Try it now →
 ```
 In Phase 5 this anchors to the AskMePanel below. In Phase 6 it switches to link to `/play`.
 
+**Stats section** (`StatsSection.tsx`) — eyebrow + section headline + three big-number stats with captions.
+```
+Eyebrow:  By the numbers
+Headline: Small now. Built to grow.
+
+[N]  Users                The current dyad
+[N]  Questions asked      Across all difficulty tiers
+[N]  Topics covered       From history to pickleball
+```
+
+**Pillar cards section** (`PillarCards.tsx`) — eyebrow + section headline + three pillar cards.
+```
+Eyebrow:  How it works
+Headline: Trivia, tuned to you.
+
+01 Topics you actually love.
+   You pick what Ash quizzes you on. Porsche, Ramayana, jazz, pickleball. Your call, every time.
+
+02 Questions that challenge you.
+   Four difficulty tiers, from yes/no to open-ended. No repeats. Ash tells you when you're wrong.
+
+03 Charts that grow with you.
+   Every answer logged. Daily activity, correct rate, topic breakdown. Watch yourself get sharper.
+```
+
 **AskMePanel heading** (`AskMePanel.tsx`)
 ```
 Ask Ash
@@ -153,15 +178,25 @@ Ask Ash
 Pick your difficulty. Ash writes the question.
 ```
 
-**Stat tile labels** (`page.tsx`)
-```
-Users · Questions · Topics
-```
-
 **Recent questions section heading**
 ```
 Recent questions
 See all →
+```
+
+**Recap + CTA section** (`RecapCTA.tsx`) — bottom-of-page recap + conversion.
+```
+Headline: Ready to get started?
+Subhead:  Jump in. Ash is ready with a question on whatever topic you pick.
+Buttons:  Try it now →   |   Ask for an invite
+
+Sub-card 1: See recent questions
+            Real output from Ash, across every topic and tier.
+            Browse questions →   (→ /questions)
+
+Sub-card 2: Browse users
+            See who's playing and their public quiz log.
+            See users →   (→ /users)
 ```
 
 ### `/users`
