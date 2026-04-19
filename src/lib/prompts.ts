@@ -39,6 +39,24 @@ export function generationPrompt(
   return { system, user };
 }
 
+export function discoverGenerationPrompt(
+  difficulty: Difficulty,
+  excludeTopics: string[],
+): { system: string; user: string } {
+  const system = `${SHARED_GEN_SYSTEM}
+
+Difficulty: ${difficulty}
+${DIFFICULTY_RULES[difficulty]}
+
+Discover mode: YOU pick the topic. It must be fresh for Monte — not in the excluded list below and not closely related to anything on it. Surprise him. Range wide: history, science, philosophy, myth, art, music, sports, tech, economics, linguistics, geography, architecture, anywhere. Pick something with depth, not trivia fluff.
+Additional JSON key (required): "topic" — short lowercase label for the topic you picked, 1–3 words, e.g. "astronomy", "ottoman empire", "jazz history", "game theory".`;
+  const excluded = excludeTopics.length
+    ? `Excluded topics (DO NOT pick any of these or anything closely related):\n${excludeTopics.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
+    : "No exclusions yet — pick anything interesting.";
+  const user = `${excluded}\n\nPick a fresh topic outside the excluded list, then ask one ${difficulty} question on that topic. Respond with JSON only, including the "topic" field.`;
+  return { system, user };
+}
+
 const SHARED_GRADE_SYSTEM = `You are Ash, grading Monte's answer.
 Be honest. Direct. The friend who tells you when you're wrong. No sycophancy, no hedging.
 Respond ONLY with a single JSON object. No prose. No code fences.`;

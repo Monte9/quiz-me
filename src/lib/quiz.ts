@@ -80,3 +80,10 @@ export async function getRecentQuestionsForTopic(
   `;
   return rows.map((r) => r.question as string);
 }
+
+export async function getAllUserTopics(username: string): Promise<string[]> {
+  const rows = await sql`
+    select distinct topic from questions where username = ${username}
+  `;
+  return rows.map((r) => r.topic as string);
+}

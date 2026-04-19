@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sql } from "@/lib/db";
 import { callJSON } from "@/lib/claude";
-import { generationPrompt } from "@/lib/prompts";
+import { discoverGenerationPrompt, generationPrompt } from "@/lib/prompts";
 import {
   difficultySchema,
+  getAllUserTopics,
   getRecentQuestionsForTopic,
   idPrefix,
   loadQuizContext,
@@ -24,6 +25,7 @@ const genOutputSchema = z.object({
   slug: z.string().optional().default(""),
   options: z.array(z.string().min(1)).optional(),
   correctIndex: z.number().int().min(0).optional(),
+  topic: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -45,32 +47,72 @@ export async function POST(req: Request) {
 
   const ctx = await loadQuizContext(username);
   if (!ctx) return NextResponse.json({ error: "user not found" }, { status: 404 });
-  if (ctx.interests.length === 0) {
+
+  const isDiscover = preferred === "discover";
+
+  // Discover mode doesn't require interests — it's the escape hatch.
+  if (!isDiscover && ctx.interests.length === 0) {
     return NextResponse.json(
       { error: "no interests set for user" },
       { status: 409 },
     );
   }
 
-  const topic = pickTopic(ctx.interests, ctx.recentTopics, preferred);
-  if (!topic) {
-    return NextResponse.json({ error: "could not pick topic" }, { status: 500 });
-  }
-
-  const recentQuestions = await getRecentQuestionsForTopic(username, topic, 20);
-
+  let topic: string;
   let gen: z.infer<typeof genOutputSchema>;
-  try {
-    const { system, user } = generationPrompt(difficulty, topic, recentQuestions);
-    gen = await callJSON({
-      system,
-      user,
-      schema: genOutputSchema,
-      maxTokens: 1500,
-    });
-  } catch (err) {
-    console.error("claude generation failed", err);
-    return NextResponse.json({ error: "generation failed" }, { status: 502 });
+
+  if (isDiscover) {
+    const interestNames = ctx.interests.map((i) => i.name);
+    const pastTopics = await getAllUserTopics(username);
+    const excludeTopics = Array.from(
+      new Set([...interestNames, ...pastTopics]),
+    );
+    try {
+      const { system, user } = discoverGenerationPrompt(
+        difficulty,
+        excludeTopics,
+      );
+      gen = await callJSON({
+        system,
+        user,
+        schema: genOutputSchema,
+        maxTokens: 1500,
+      });
+    } catch (err) {
+      console.error("claude discover generation failed", err);
+      return NextResponse.json({ error: "generation failed" }, { status: 502 });
+    }
+    if (!gen.topic || gen.topic.trim() === "") {
+      console.error("discover mode returned no topic", { gen });
+      return NextResponse.json(
+        { error: "discover mode returned no topic" },
+        { status: 502 },
+      );
+    }
+    topic = gen.topic.trim().toLowerCase();
+  } else {
+    const picked = pickTopic(ctx.interests, ctx.recentTopics, preferred);
+    if (!picked) {
+      return NextResponse.json({ error: "could not pick topic" }, { status: 500 });
+    }
+    topic = picked;
+    const recentQuestions = await getRecentQuestionsForTopic(username, topic, 20);
+    try {
+      const { system, user } = generationPrompt(
+        difficulty,
+        topic,
+        recentQuestions,
+      );
+      gen = await callJSON({
+        system,
+        user,
+        schema: genOutputSchema,
+        maxTokens: 1500,
+      });
+    } catch (err) {
+      console.error("claude generation failed", err);
+      return NextResponse.json({ error: "generation failed" }, { status: 502 });
+    }
   }
 
   // Validate multiple-choice shape for easy + medium.

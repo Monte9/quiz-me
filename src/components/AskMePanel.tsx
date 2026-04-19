@@ -256,6 +256,18 @@ export function AskMePanel({
                   >
                     random
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setTopic("discover")}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      topic === "discover"
+                        ? "border-[var(--color-accent)] bg-[var(--color-accent-glow)] text-[var(--color-accent)]"
+                        : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-dim)] hover:border-[var(--color-accent-dim)]"
+                    }`}
+                    title="Ash picks a fresh topic you haven't been quizzed on"
+                  >
+                    discover
+                  </button>
                   {interests.map((i) => (
                     <button
                       key={i.name}
