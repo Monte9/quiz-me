@@ -110,7 +110,7 @@ export function JoinCard() {
 
       <p className="mb-5 text-sm leading-relaxed text-[var(--color-text-muted)]">
         Get your own public quiz page. Pick your topics, pick your difficulty,
-        answer an AI-generated question daily — or whenever you want.
+        answer an AI-generated question daily, or whenever you want.
       </p>
 
       <div className="mt-auto pt-2">
