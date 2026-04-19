@@ -96,7 +96,11 @@ export function UserDashboard({
       </header>
 
       {user.username === "monte" && (
-        <AskMePanel username={user.username} interests={user.interests} />
+        <AskMePanel
+          username={user.username}
+          interests={user.interests}
+          questions={user.questions}
+        />
       )}
 
       <main className="mx-auto w-full max-w-6xl px-6 pb-16">

@@ -34,6 +34,8 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 - **Freeform (hard + xhard)** — unchanged; LLM grades with difficulty-specific rubrics.
 - **Discover mode** — topic picker has `random` (user's interests), `discover` (Claude picks fresh, excludes interests ∪ all past-quizzed topics), or a specific topic. Discover's picked topic is stored on the row, so the discovery pool keeps shrinking with play.
 
+**AskMePanel UX refresh:** Idle state is now an inline-token sentence — `Quizzing you on [topic ▾] with [difficulty ▾] difficulty.` — with a single **Quiz me →** primary CTA. Tokens open inline dropdowns (topic picker has Random / Discover / Your topics / Recent; difficulty has all four with a one-word hint each). A stats subtitle shows context for the current slice (`X {topic} questions at {diff} · Y% correct ↑`) when ≥3 graded; xhard shows thoughtfulness avg instead of correctness; Discover shows breadth. Last topic + difficulty persist in `localStorage` (`qm-last-topic:<user>`, `qm-last-difficulty:<user>`).
+
 **Shared infra:** `<QuestionList />`, `<Pagination />`, `<BrandBar />`, `<SiteFooter />`, 308 redirect `/:user/q/:id → /questions/:id`.
 
 **Data:** `users` + `questions` tables, seeded from `users.json`. 2 users (Monte claimed, Suvarcha unclaimed with invite `SU-CC23CA`), 11 interests. Skill at [ash-core/skills/quiz-me/SKILL.md](../ash-core/skills/quiz-me/SKILL.md) writes `users.json` + commits; `pnpm db:seed` rebuilds Postgres on demand.
@@ -176,4 +178,4 @@ Cash in the subhead promise ("Charts that track your progress").
 
 ---
 
-*Updated: 2026-04-19*
+*Updated: 2026-04-18*

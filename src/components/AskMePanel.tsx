@@ -1,8 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import type { Difficulty, Interest, Result } from "@/lib/users";
+import { useEffect, useRef, useState } from "react";
+import {
+  computeContextStats,
+  recentTopics,
+  type Difficulty,
+  type Interest,
+  type Question,
+  type Result,
+} from "@/lib/users";
 
 type State =
   | { kind: "idle" }
@@ -35,7 +42,16 @@ type State =
       answerKey: string;
     };
 
+const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard", "xhard"];
+
 const difficultyLabels: Record<Difficulty, string> = {
+  easy: "easy",
+  medium: "medium",
+  hard: "hard",
+  xhard: "xhard",
+};
+
+const difficultyBadge: Record<Difficulty, string> = {
   easy: "Easy",
   medium: "Medium",
   hard: "Hard",
@@ -83,25 +99,92 @@ function errMsg(e: unknown): string {
   return "something went wrong";
 }
 
+function topicLabel(topic: string): string {
+  if (topic === "") return "a random topic";
+  if (topic === "discover") return "a fresh topic";
+  return topic;
+}
+
+function trendGlyph(trend: "up" | "down" | "flat" | null): string {
+  if (trend === "up") return " ↑";
+  if (trend === "down") return " ↓";
+  return "";
+}
+
 export function AskMePanel({
   username,
   interests,
+  questions,
 }: {
   username: string;
   interests: Interest[];
+  questions: Question[];
 }) {
   const router = useRouter();
   const [state, setState] = useState<State>({ kind: "idle" });
   const [answer, setAnswer] = useState("");
   const [topic, setTopic] = useState<string>("");
+  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [showAnswerKey, setShowAnswerKey] = useState(false);
   const [showTopic, setShowTopic] = useState(false);
+  const [showDifficulty, setShowDifficulty] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function startQuiz(difficulty: Difficulty) {
+  // Hydrate last choice from localStorage once on mount.
+  useEffect(() => {
+    try {
+      const t = localStorage.getItem(`qm-last-topic:${username}`);
+      const d = localStorage.getItem(
+        `qm-last-difficulty:${username}`,
+      ) as Difficulty | null;
+      if (t !== null) setTopic(t);
+      if (d && DIFFICULTIES.includes(d)) setDifficulty(d);
+    } catch {
+      // ignore (private mode, quota, etc.)
+    }
+  }, [username]);
+
+  // Close floating menus on outside click.
+  const topicRef = useRef<HTMLDivElement | null>(null);
+  const diffRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      const t = e.target as Node;
+      if (topicRef.current && !topicRef.current.contains(t)) {
+        setShowTopic(false);
+      }
+      if (diffRef.current && !diffRef.current.contains(t)) {
+        setShowDifficulty(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  function persistTopic(next: string) {
+    setTopic(next);
+    try {
+      localStorage.setItem(`qm-last-topic:${username}`, next);
+    } catch {
+      // ignore
+    }
+  }
+
+  function persistDifficulty(next: Difficulty) {
+    setDifficulty(next);
+    try {
+      localStorage.setItem(`qm-last-difficulty:${username}`, next);
+    } catch {
+      // ignore
+    }
+  }
+
+  async function startQuiz() {
     setError(null);
     setAnswer("");
     setShowAnswerKey(false);
+    setShowTopic(false);
+    setShowDifficulty(false);
     setState({ kind: "loading" });
     try {
       const res = await fetch("/api/quiz/new", {
@@ -163,7 +246,6 @@ export function AskMePanel({
       };
       if (!res.ok) throw new Error(data.error ?? "grading failed");
 
-      // Compute displayable userAnswer for the reveal screen.
       const displayedAnswer =
         args.selectedIndex !== undefined && prev.options
           ? prev.options[args.selectedIndex]
@@ -180,7 +262,6 @@ export function AskMePanel({
         grade: data.grade ?? null,
         answerKey: data.answerKey ?? "",
       });
-      // Refresh the server component so the new question shows in the log.
       router.refresh();
     } catch (e) {
       setError(errMsg(e));
@@ -195,6 +276,16 @@ export function AskMePanel({
     setError(null);
   }
 
+  // Subtitle copy branches for the idle state.
+  const ctx = computeContextStats(questions, topic, difficulty);
+  const subtitle = buildSubtitle(topic, difficulty, ctx);
+
+  const recent = recentTopics(
+    questions,
+    interests.map((i) => i.name),
+    3,
+  );
+
   return (
     <section
       id="ask"
@@ -207,93 +298,165 @@ export function AskMePanel({
               <h3 className="text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
                 Ask Ash
               </h3>
-              {interests.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowTopic((v) => !v)}
-                  className="text-xs font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
-                >
-                  Topic: {topic || "random"} {showTopic ? "▴" : "▾"}
-                </button>
-              )}
             </div>
 
-            <p className="font-display mb-6 text-2xl leading-tight font-semibold text-[var(--color-text)] sm:text-3xl">
-              Pick your difficulty. Ash writes the question.
+            <p className="font-display mb-3 text-2xl leading-snug font-semibold text-[var(--color-text)] sm:text-3xl">
+              Quizzing you on{" "}
+              <span className="relative inline-block" ref={topicRef}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTopic((v) => !v);
+                    setShowDifficulty(false);
+                  }}
+                  className="text-[var(--color-accent)] decoration-dotted underline-offset-[6px] transition-colors hover:text-[var(--color-accent-bright)] hover:underline"
+                  aria-expanded={showTopic}
+                  aria-haspopup="listbox"
+                >
+                  {topicLabel(topic)}
+                  <span className="ml-1 text-sm text-[var(--color-text-muted)]">
+                    {showTopic ? "▴" : "▾"}
+                  </span>
+                </button>
+                {showTopic && (
+                  <div
+                    role="listbox"
+                    className="absolute top-full left-0 z-20 mt-2 w-[min(22rem,80vw)] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-raised)] p-3 text-sm shadow-xl"
+                  >
+                    <div className="mb-2 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+                      Pick a topic
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <TopicChip
+                        label="random"
+                        active={topic === ""}
+                        onClick={() => {
+                          persistTopic("");
+                          setShowTopic(false);
+                        }}
+                      />
+                      <TopicChip
+                        label="discover"
+                        active={topic === "discover"}
+                        title="Ash picks a fresh topic you haven't been quizzed on"
+                        onClick={() => {
+                          persistTopic("discover");
+                          setShowTopic(false);
+                        }}
+                      />
+                    </div>
+
+                    {interests.length > 0 && (
+                      <>
+                        <div className="mt-4 mb-2 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+                          Your topics
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {interests.map((i) => (
+                            <TopicChip
+                              key={i.name}
+                              label={i.name}
+                              active={topic === i.name}
+                              onClick={() => {
+                                persistTopic(i.name);
+                                setShowTopic(false);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {recent.length > 0 && (
+                      <>
+                        <div className="mt-4 mb-2 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+                          Recent
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {recent.map((name) => (
+                            <TopicChip
+                              key={name}
+                              label={name}
+                              active={topic === name}
+                              onClick={() => {
+                                persistTopic(name);
+                                setShowTopic(false);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </span>{" "}
+              with{" "}
+              <span className="relative inline-block" ref={diffRef}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDifficulty((v) => !v);
+                    setShowTopic(false);
+                  }}
+                  className="text-[var(--color-accent)] decoration-dotted underline-offset-[6px] transition-colors hover:text-[var(--color-accent-bright)] hover:underline"
+                  aria-expanded={showDifficulty}
+                  aria-haspopup="listbox"
+                >
+                  {difficultyLabels[difficulty]}
+                  <span className="ml-1 text-sm text-[var(--color-text-muted)]">
+                    {showDifficulty ? "▴" : "▾"}
+                  </span>
+                </button>
+                {showDifficulty && (
+                  <div
+                    role="listbox"
+                    className="absolute top-full left-0 z-20 mt-2 w-44 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-raised)] p-1 text-sm shadow-xl"
+                  >
+                    {DIFFICULTIES.map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        role="option"
+                        aria-selected={difficulty === d}
+                        onClick={() => {
+                          persistDifficulty(d);
+                          setShowDifficulty(false);
+                        }}
+                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors ${
+                          difficulty === d
+                            ? "bg-[var(--color-accent-wash)] text-[var(--color-accent)]"
+                            : "text-[var(--color-text-dim)] hover:bg-[var(--color-surface)]"
+                        }`}
+                      >
+                        <span className="font-medium">
+                          {difficultyLabels[d]}
+                        </span>
+                        <DifficultyHint d={d} />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </span>{" "}
+              difficulty.
             </p>
 
+            {subtitle && (
+              <p className="mb-6 text-sm text-[var(--color-text-muted)]">
+                {subtitle}
+              </p>
+            )}
+
             <div className="flex flex-wrap gap-2">
-              {(["easy", "medium", "hard"] as Difficulty[]).map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => startQuiz(d)}
-                  className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-bg)] transition-all hover:bg-[var(--color-accent-bright)] hover:shadow-[0_0_30px_var(--color-accent-glow)]"
-                >
-                  {difficultyLabels[d]}
-                </button>
-              ))}
               <button
                 type="button"
-                onClick={() => startQuiz("xhard")}
-                className="inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-500/10 px-5 py-2.5 text-sm font-semibold text-red-300 transition-all hover:border-red-500/70 hover:bg-red-500/20"
+                onClick={startQuiz}
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-bg)] transition-all hover:bg-[var(--color-accent-bright)] hover:shadow-[0_0_30px_var(--color-accent-glow)]"
               >
-                xHard →
+                Quiz me →
               </button>
             </div>
 
-            {showTopic && interests.length > 0 && (
-              <div className="mt-5 border-t border-[var(--color-border)] pt-5">
-                <div className="mb-2 text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
-                  Pick a topic
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setTopic("")}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                      topic === ""
-                        ? "border-[var(--color-accent)] bg-[var(--color-accent-glow)] text-[var(--color-accent)]"
-                        : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-dim)] hover:border-[var(--color-accent-dim)]"
-                    }`}
-                  >
-                    random
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTopic("discover")}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                      topic === "discover"
-                        ? "border-[var(--color-accent)] bg-[var(--color-accent-glow)] text-[var(--color-accent)]"
-                        : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-dim)] hover:border-[var(--color-accent-dim)]"
-                    }`}
-                    title="Ash picks a fresh topic you haven't been quizzed on"
-                  >
-                    discover
-                  </button>
-                  {interests.map((i) => (
-                    <button
-                      key={i.name}
-                      type="button"
-                      onClick={() => setTopic(i.name)}
-                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                        topic === i.name
-                          ? "border-[var(--color-accent)] bg-[var(--color-accent-glow)] text-[var(--color-accent)]"
-                          : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-dim)] hover:border-[var(--color-accent-dim)]"
-                      }`}
-                    >
-                      {i.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <p className="mt-4 text-sm text-red-400">
-                {error}
-              </p>
-            )}
+            {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
           </div>
         )}
 
@@ -327,7 +490,7 @@ export function AskMePanel({
               <span
                 className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase ${difficultyAccent[state.difficulty]}`}
               >
-                {difficultyLabels[state.difficulty]}
+                {difficultyBadge[state.difficulty]}
               </span>
               <span className="text-xs font-medium text-[var(--color-text-dim)]">
                 {state.topic}
@@ -408,7 +571,9 @@ export function AskMePanel({
                       Skip
                     </button>
                     {error && (
-                      <p className="mt-2 w-full text-sm text-red-400">{error}</p>
+                      <p className="mt-2 w-full text-sm text-red-400">
+                        {error}
+                      </p>
                     )}
                   </div>
                 ) : (
@@ -428,7 +593,7 @@ export function AskMePanel({
               <span
                 className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase ${difficultyAccent[state.difficulty]}`}
               >
-                {difficultyLabels[state.difficulty]}
+                {difficultyBadge[state.difficulty]}
               </span>
               <span className="text-xs font-medium text-[var(--color-text-dim)]">
                 {state.topic}
@@ -511,4 +676,99 @@ export function AskMePanel({
       </div>
     </section>
   );
+}
+
+function TopicChip({
+  label,
+  active,
+  title,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  title?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+        active
+          ? "border-[var(--color-accent)] bg-[var(--color-accent-glow)] text-[var(--color-accent)]"
+          : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-dim)] hover:border-[var(--color-accent-dim)]"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function DifficultyHint({ d }: { d: Difficulty }) {
+  const label: Record<Difficulty, string> = {
+    easy: "yes / no",
+    medium: "4 choices",
+    hard: "freeform",
+    xhard: "research",
+  };
+  return (
+    <span className="text-[0.65rem] text-[var(--color-text-muted)]">
+      {label[d]}
+    </span>
+  );
+}
+
+function buildSubtitle(
+  topic: string,
+  difficulty: Difficulty,
+  ctx: {
+    total: number;
+    graded: number;
+    correctRate: number | null;
+    trend: "up" | "down" | "flat" | null;
+    xhardAvg: number | null;
+    uniqueTopics: number;
+  },
+): string | null {
+  const specific = topic !== "" && topic !== "discover";
+  const isDiscover = topic === "discover";
+
+  // Zero history in this slice: hide subtitle.
+  if (ctx.total === 0) return null;
+
+  // Discover mode surfaces breadth, not correctness.
+  if (isDiscover) {
+    return `${ctx.total} ${ctx.total === 1 ? "question" : "questions"} explored with Ash · ${ctx.uniqueTopics} ${
+      ctx.uniqueTopics === 1 ? "topic" : "topics"
+    }`;
+  }
+
+  // xhard is scored on thoughtfulness, not correctness.
+  if (difficulty === "xhard") {
+    if (specific) {
+      if (ctx.xhardAvg !== null) {
+        return `${ctx.total} xhard ${topic} ${ctx.total === 1 ? "question" : "questions"} · avg ${ctx.xhardAvg.toFixed(1)}/5 thoughtfulness`;
+      }
+      return `${ctx.total} xhard ${topic} ${ctx.total === 1 ? "question" : "questions"} so far`;
+    }
+    if (ctx.xhardAvg !== null) {
+      return `${ctx.total} xhard ${ctx.total === 1 ? "question" : "questions"} · avg ${ctx.xhardAvg.toFixed(1)}/5 thoughtfulness`;
+    }
+    return `${ctx.total} xhard ${ctx.total === 1 ? "question" : "questions"} so far`;
+  }
+
+  // Specific topic, enough data for a rate.
+  if (specific) {
+    if (ctx.correctRate !== null) {
+      return `You've answered ${ctx.total} ${topic} ${ctx.total === 1 ? "question" : "questions"} at ${difficultyLabels[difficulty]} · ${ctx.correctRate}% correct${trendGlyph(ctx.trend)}`;
+    }
+    return `${ctx.total} on ${topic} so far`;
+  }
+
+  // Random mode with enough graded history.
+  if (ctx.correctRate !== null) {
+    return `${ctx.total} answered across your topics at ${difficultyLabels[difficulty]} · ${ctx.correctRate}% correct${trendGlyph(ctx.trend)}`;
+  }
+  return `${ctx.total} answered across your topics so far`;
 }
