@@ -3,7 +3,6 @@ import Link from "next/link";
 type Stat = {
   value: number;
   label: string;
-  caption: string;
   href: string | null;
 };
 
@@ -17,37 +16,13 @@ export function StatsSection({
   topics: number;
 }) {
   const stats: Stat[] = [
-    {
-      value: users,
-      label: "Users",
-      caption: "The current dyad",
-      href: "/users",
-    },
-    {
-      value: questions,
-      label: "Questions asked",
-      caption: "Across all difficulty tiers",
-      href: "/questions",
-    },
-    {
-      value: topics,
-      label: "Topics covered",
-      caption: "From history to pickleball",
-      href: null,
-    },
+    { value: users, label: "Users", href: "/users" },
+    { value: questions, label: "Questions asked", href: "/questions" },
+    { value: topics, label: "Topics covered", href: null },
   ];
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 py-20 sm:py-24">
-      <div className="mb-12 text-center">
-        <div className="mb-3 text-xs font-semibold tracking-[0.25em] text-[var(--color-text-muted)] uppercase">
-          By the numbers
-        </div>
-        <h2 className="font-display text-3xl leading-tight font-semibold tracking-tight text-[var(--color-text)] sm:text-4xl">
-          Small now. Built to grow.
-        </h2>
-      </div>
-
+    <section className="mx-auto w-full max-w-6xl px-6 py-16 sm:py-20">
       <div className="grid gap-6 sm:grid-cols-3">
         {stats.map((s) => {
           const inner = (
@@ -57,9 +32,6 @@ export function StatsSection({
               </div>
               <div className="mt-4 text-xs font-semibold tracking-[0.2em] text-[var(--color-text)] uppercase">
                 {s.label}
-              </div>
-              <div className="mt-2 text-xs text-[var(--color-text-muted)]">
-                {s.caption}
               </div>
             </div>
           );

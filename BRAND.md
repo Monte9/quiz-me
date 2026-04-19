@@ -113,10 +113,12 @@ Single source of truth. Update here first, then mirror into the code. If a page 
 
 ### `/` — Home
 
-**BrandBar** (`BrandBar.tsx`)
+**BrandBar** (`BrandBar.tsx`) — wordmark top-left, nav top-right.
 ```
-Quiz Me
+Wordmark: Quiz Me  (Quiz in muted, Me in accent)
+Nav:      Play · Users · Questions
 ```
+Play currently points to `/monte` (the live quiz UI on Monte's log). In Phase 6 it switches to `/play`.
 
 **Hero eyebrow + H1** (paired rotating crossfade, swap every ~5s — eyebrow and H1 swap together)
 ```
@@ -141,16 +143,13 @@ Personalized to your topics. Questions that challenge you. Charts that track you
 ```
 Try it now →
 ```
-In Phase 5 this anchors to the AskMePanel below. In Phase 6 it switches to link to `/play`.
+Phase 5: links to `/monte` (live quiz UI on Monte's log). Phase 6: switches to `/play`.
 
-**Stats section** (`StatsSection.tsx`) — eyebrow + section headline + three big-number stats with captions.
+**Stats section** (`StatsSection.tsx`) — three big-number stats, no headline, no captions. Numbers speak for themselves.
 ```
-Eyebrow:  By the numbers
-Headline: Small now. Built to grow.
-
-[N]  Users                The current dyad
-[N]  Questions asked      Across all difficulty tiers
-[N]  Topics covered       From history to pickleball
+[N]  Users
+[N]  Questions asked
+[N]  Topics covered
 ```
 
 **Pillar cards section** (`PillarCards.tsx`) — eyebrow + section headline + three pillar cards.
@@ -168,27 +167,20 @@ Headline: Trivia, tuned to you.
    Every answer logged. Daily activity, correct rate, topic breakdown. Watch yourself get sharper.
 ```
 
-**AskMePanel heading** (`AskMePanel.tsx`)
-```
-Ask Ash
-```
-
-**AskMePanel prompt** (above difficulty buttons)
-```
-Pick your difficulty. Ash writes the question.
-```
-
 **Recent questions section heading**
 ```
 Recent questions
 See all →
 ```
 
+Note: The inline AskMePanel (quiz demo) is NOT on the landing page. It lives on `/[user]` pages, and in Phase 6 it moves to `/play`. See AskMePanel copy under `/[user]` below.
+
 **Recap + CTA section** (`RecapCTA.tsx`) — bottom-of-page recap + conversion.
 ```
 Headline: Ready to get started?
 Subhead:  Jump in. Ash is ready with a question on whatever topic you pick.
 Buttons:  Try it now →   |   Ask for an invite
+          (→ /monte)        (→ mailto)
 
 Sub-card 1: See recent questions
             Real output from Ash, across every topic and tier.
@@ -198,6 +190,7 @@ Sub-card 2: Browse users
             See who's playing and their public quiz log.
             See users →   (→ /users)
 ```
+"Try it now →" points to `/monte` in Phase 5, will switch to `/play` in Phase 6.
 
 ### `/users`
 
@@ -233,7 +226,17 @@ Ask Monte for an invite →
 
 ### `/[user]` — per-user log
 
-No page-level marketing copy; the user's name is the headline. Interests chips and stat labels live here.
+No page-level marketing copy; the user's name is the headline. Interests chips and stat labels live here. The inline quiz demo (`AskMePanel.tsx`) lives on this page in Phase 5.
+
+**AskMePanel heading** (`AskMePanel.tsx`)
+```
+Ask Ash
+```
+
+**AskMePanel prompt** (above difficulty buttons)
+```
+Pick your difficulty. Ash writes the question.
+```
 
 ### `/questions`
 
@@ -268,10 +271,7 @@ No page-level marketing copy. Attribution line links back to `/[user]`.
 
 ### Footer (every page)
 
-**Nav**
-```
-Home · Users · Questions
-```
+No nav (that moved to the top-right of BrandBar). Just the credit line.
 
 **Credit**
 ```
@@ -280,4 +280,4 @@ Built by the Ash + Monte dyad
 
 ---
 
-*Updated: 2026-04-18*
+*Updated: 2026-04-18 (Phase 5 refinement pass — AskMePanel removed from landing, nav moved to BrandBar, stats simplified)*

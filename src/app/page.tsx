@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { getAllUsers, getUser } from "@/lib/users";
-import { AskMePanel } from "@/components/AskMePanel";
+import { getAllUsers } from "@/lib/users";
 import { BrandBar } from "@/components/BrandBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Hero } from "@/components/Hero";
@@ -8,14 +7,11 @@ import { StatsSection } from "@/components/StatsSection";
 import { PillarCards } from "@/components/PillarCards";
 import { RecapCTA } from "@/components/RecapCTA";
 import { QuestionList } from "@/components/QuestionList";
-import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const users = await getAllUsers();
-  const monte = await getUser("monte");
-  if (!monte) notFound();
 
   const totalQuestions = users.reduce((n, u) => n + u.questions.length, 0);
   const topicSet = new Set<string>();
@@ -42,8 +38,6 @@ export default async function Home() {
       />
 
       <PillarCards />
-
-      <AskMePanel username={monte.username} interests={monte.interests} />
 
       {recent.length > 0 && (
         <section className="mx-auto w-full max-w-6xl px-6 pb-20 sm:pb-24">

@@ -1,9 +1,15 @@
 import Link from "next/link";
 
+const NAV_LINKS: { href: string; label: string }[] = [
+  { href: "/monte", label: "Play" },
+  { href: "/users", label: "Users" },
+  { href: "/questions", label: "Questions" },
+];
+
 export function BrandBar({ compact = false }: { compact?: boolean } = {}) {
   return (
     <header
-      className={`mx-auto w-full max-w-7xl px-6 ${
+      className={`mx-auto flex w-full max-w-7xl items-center justify-between px-6 ${
         compact ? "pt-5" : "pt-6 sm:pt-8"
       }`}
     >
@@ -22,6 +28,18 @@ export function BrandBar({ compact = false }: { compact?: boolean } = {}) {
           Me
         </span>
       </Link>
+
+      <nav className="flex items-center gap-5 text-[0.65rem] font-semibold tracking-[0.25em] uppercase sm:gap-7 sm:text-xs">
+        {NAV_LINKS.map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            className="text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
+          >
+            {l.label}
+          </Link>
+        ))}
+      </nav>
     </header>
   );
 }

@@ -64,7 +64,7 @@ export function Hero() {
       </p>
 
       <a
-        href="#ask"
+        href="/monte"
         className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-[var(--color-bg)] transition-all hover:bg-[var(--color-accent-bright)] hover:shadow-[0_0_30px_var(--color-accent-glow)]"
       >
         Try it now →
