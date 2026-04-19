@@ -9,7 +9,7 @@ import {
   type Interest,
   type Question,
   type Result,
-} from "@/lib/users";
+} from "@/lib/quiz-core";
 
 type State =
   | { kind: "idle" }

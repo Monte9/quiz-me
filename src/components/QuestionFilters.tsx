@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { Difficulty } from "@/lib/users";
+import type { Difficulty } from "@/lib/quiz-core";
 
 const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard", "xhard"];
 
