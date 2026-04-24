@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sql } from "@/lib/db";
 import { callJSON } from "@/lib/claude";
-import { gradingPrompt } from "@/lib/prompts";
+import { gradingPrompt, skippedReferencePrompt } from "@/lib/prompts";
 import type { Difficulty, Result } from "@/lib/users";
 
 const bodySchema = z.object({
@@ -19,6 +19,10 @@ const easyMedHardGradeSchema = z.object({
 
 const xhardGradeSchema = z.object({
   thoughtfulnessScore: z.number(),
+  grade: z.string().min(1),
+});
+
+const skipReferenceSchema = z.object({
   grade: z.string().min(1),
 });
 
@@ -114,20 +118,54 @@ export async function POST(req: Request) {
   const userAnswer = userAnswerRaw.trim();
 
   if (userAnswer === "") {
-    await sql`
-      update questions set
-        user_answer = null,
-        result      = 'skipped',
-        status      = 'skipped',
-        graded_at   = ${now}
-      where id = ${questionId}
-    `;
-    return NextResponse.json({
-      result: "skipped",
-      grade: null,
-      thoughtfulnessScore: null,
-      answerKey: q.answer_key,
-    });
+    // Skip still produces a reference answer — Monte wants to learn the
+    // material even when he didn't try. Store the reference in `grade` so
+    // the UI's "Ash's grade" block + the detail page pick it up.
+    try {
+      const { system, user } = skippedReferencePrompt(
+        difficulty,
+        q.question as string,
+      );
+      const reference = await callJSON({
+        system,
+        user,
+        schema: skipReferenceSchema,
+        maxTokens: 600,
+      });
+      await sql`
+        update questions set
+          user_answer = null,
+          result      = 'skipped',
+          grade       = ${reference.grade},
+          status      = 'skipped',
+          graded_at   = ${now}
+        where id = ${questionId}
+      `;
+      return NextResponse.json({
+        result: "skipped",
+        grade: reference.grade,
+        thoughtfulnessScore: null,
+        answerKey: q.answer_key,
+      });
+    } catch (err) {
+      // Fall back to a grade-less skip rather than 502'ing — the user still
+      // skipped the question, we just couldn't fetch the reference this time.
+      console.error("claude skip-reference failed", err);
+      await sql`
+        update questions set
+          user_answer = null,
+          result      = 'skipped',
+          status      = 'skipped',
+          graded_at   = ${now}
+        where id = ${questionId}
+      `;
+      return NextResponse.json({
+        result: "skipped",
+        grade: null,
+        thoughtfulnessScore: null,
+        answerKey: q.answer_key,
+      });
+    }
   }
 
   try {

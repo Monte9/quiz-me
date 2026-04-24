@@ -105,3 +105,25 @@ export function gradingPrompt(
   const user = `Question:\n${question}${ref}\n\nMonte's answer:\n${userAnswer}\n\nGrade it. JSON only.`;
   return { system, user };
 }
+
+// Skip path: Monte didn't answer, but he still wants to learn the material.
+// Produce just the reference answer — no judgment, no "what he got right/wrong".
+const SKIP_REFERENCE_RULES: Record<Difficulty, string> = {
+  easy: `One sentence. State the correct yes/no and a line of context (who/what/when/why).`,
+  medium: `2–4 sentences. State the correct answer and the chain of facts that lead to it.`,
+  hard: `3–5 sentences. Explain the core mechanism or reasoning. A reader should learn the concept from this alone.`,
+  xhard: `4–6 sentences. Sketch what a strong proposal would consider — input variables, tradeoffs, stakeholders, second-order effects, failure modes.`,
+};
+
+export function skippedReferencePrompt(
+  difficulty: Difficulty,
+  question: string,
+): { system: string; user: string } {
+  const system = `You are Ash. Monte skipped this question — give him the reference answer he should have known. No judgment, no "you should have tried," just the knowledge.
+Respond ONLY with a single JSON object: {"grade": "<reference answer>"}. No prose. No code fences.
+
+Difficulty: ${difficulty}
+${SKIP_REFERENCE_RULES[difficulty]}`;
+  const user = `Question:\n${question}\n\nProvide the reference answer. JSON only.`;
+  return { system, user };
+}

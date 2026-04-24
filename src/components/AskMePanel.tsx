@@ -322,7 +322,7 @@ export function AskMePanel({
               </h3>
             </div>
 
-            <p className="font-display mb-3 text-2xl leading-snug font-semibold text-[var(--color-text)] sm:text-3xl">
+            <div className="font-display mb-3 text-2xl leading-snug font-semibold text-[var(--color-text)] sm:text-3xl">
               <span className="block">Quizzing you on</span>
               <span className="block">
                 <span className="relative inline-block" ref={topicRef}>
@@ -396,7 +396,7 @@ export function AskMePanel({
                 </span>{" "}
                 difficulty.
               </span>
-            </p>
+            </div>
 
             {/* Mobile bottom-sheet topic picker */}
             {showTopic && (
@@ -555,15 +555,6 @@ export function AskMePanel({
                       {opt}
                     </button>
                   ))}
-                  <div className="flex pt-1">
-                    <button
-                      type="button"
-                      onClick={() => submit({})}
-                      className="inline-flex items-center justify-center rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-5 py-2 text-xs font-semibold text-[var(--color-text-dim)] transition-all hover:border-[var(--color-accent-dim)] hover:text-[var(--color-text)]"
-                    >
-                      Skip
-                    </button>
-                  </div>
                   {error && (
                     <p className="mt-2 text-sm text-red-400">{error}</p>
                   )}
