@@ -1,0 +1,41 @@
+name: DB migrate
+
+# Run Neon migrations automatically when a new SQL file lands on main.
+# The migrate script is idempotent (every statement uses `if not exists`
+# or a safe `alter`), so re-runs are harmless. Also exposed as a manual
+# dispatch so you can kick it off from the Actions tab if the auto-run
+# is skipped or you want to re-apply against a different DATABASE_URL.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "migrations/**"
+      - "scripts/migrate.ts"
+      - ".github/workflows/db-migrate.yml"
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: db-migrate
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm db:migrate
