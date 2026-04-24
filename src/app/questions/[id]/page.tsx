@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getQuestionById } from "@/lib/users";
 import { BrandBar } from "@/components/BrandBar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { QuestionBody } from "@/components/QuestionBody";
 import { notFound } from "next/navigation";
 
 const difficultyStyles: Record<string, string> = {
@@ -83,9 +84,13 @@ export default async function QuestionPage({
           </div>
         )}
 
-        <h1 className="font-display mb-8 text-3xl leading-tight font-semibold tracking-tight text-[var(--color-text)] sm:text-4xl">
-          {q.question}
-        </h1>
+        <div className="mb-8">
+          <QuestionBody
+            difficulty={q.difficulty}
+            text={q.question}
+            variant="detail"
+          />
+        </div>
 
         <div className="mb-8">
           {showScore ? (

@@ -10,6 +10,7 @@ import {
   type Question,
   type Result,
 } from "@/lib/quiz-core";
+import { QuestionBody } from "@/components/QuestionBody";
 
 type State =
   | { kind: "idle" }
@@ -534,9 +535,11 @@ export function AskMePanel({
               </span>
             </div>
 
-            <p className="font-display mb-5 text-2xl leading-snug font-semibold text-[var(--color-text)] sm:text-3xl">
-              {state.question}
-            </p>
+            <QuestionBody
+              difficulty={state.difficulty}
+              text={state.question}
+              variant="ask"
+            />
 
             {/* Multiple-choice path: easy (2 opts) + medium (4 opts) */}
             {state.options ? (
@@ -575,7 +578,7 @@ export function AskMePanel({
                   rows={state.difficulty === "xhard" ? 8 : 4}
                   placeholder={
                     state.difficulty === "xhard"
-                      ? "propose your answer — take your time"
+                      ? "propose your answer, take your time"
                       : "your answer"
                   }
                   className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:border-[var(--color-accent-dim)] focus:outline-none disabled:opacity-60"
@@ -637,9 +640,11 @@ export function AskMePanel({
                 </span>
               </div>
 
-              <p className="font-display mb-4 text-xl leading-snug font-semibold text-[var(--color-text)] sm:text-2xl">
-                {state.question}
-              </p>
+              <QuestionBody
+                difficulty={state.difficulty}
+                text={state.question}
+                variant="reveal"
+              />
 
               {state.userAnswer ? (
                 <div

@@ -20,10 +20,15 @@ Example: "How does a transformer model's attention mechanism actually work?"
 JSON keys (exact): "question" (string), "slug" (short kebab-case, 2–4 words).`,
 
   xhard: `Shape: propose a solution to an unsolved real-world problem.
-CRITICAL: the "question" field MUST include 1–2 paragraphs of context before asking the actual question.
-Context paragraphs describe: current state of the problem, what's been tried, who's tried it, why approaches have stalled.
-Then end with the direct ask, e.g. "What approach would you propose, and why?"
-JSON keys (exact): "question" (string), "slug" (short kebab-case, 2–4 words).`,
+The "question" field MUST be a structured document with these four sections in order, separated by blank lines:
+
+(1) One short paragraph (3-4 sentences): what the problem is, why it matters now.
+(2) One short paragraph (2-3 sentences): what's been tried, by whom, and why it has fallen short.
+(3) A line starting with "**Your task:**" followed by 1-2 sentences stating the direct ask.
+(4) A line reading exactly "Constraints:" followed by 3-5 bulleted lines (each starting with "- ") — the hard requirements any solution must satisfy. Keep each bullet to one short clause.
+
+Use plain punctuation only. Do NOT use em-dashes or en-dashes. Prefer short, concrete sentences over dense clause-stacking.
+JSON keys (exact): "question" (string with the four-section structure above), "slug" (short kebab-case, 2-4 words).`,
 };
 
 export function generationPrompt(
