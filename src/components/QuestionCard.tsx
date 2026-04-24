@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Question } from "@/lib/users";
+import { tierLabelFromModelId } from "@/lib/quiz-core";
 
 const difficultyStyles: Record<string, string> = {
   easy: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
@@ -100,6 +101,11 @@ export function QuestionCard({ q }: { q: Question }) {
           ) : (
             <span className="inline-flex items-center gap-1 rounded-md bg-zinc-500/15 px-2 py-0.5 text-xs font-semibold text-zinc-400">
               Pending
+            </span>
+          )}
+          {q.model && (
+            <span className="ml-auto text-[0.65rem] font-medium tracking-wide text-[var(--color-text-muted)] uppercase">
+              {tierLabelFromModelId(q.model)}
             </span>
           )}
         </div>

@@ -34,6 +34,7 @@ function mapQuestion(row: Record<string, unknown>): Question {
     thoughtfulnessScore: (row.thoughtfulness_score as number | null) ?? null,
     imagePath: (row.image_path as string | null) ?? null,
     grade: (row.grade as string | null) ?? null,
+    model: (row.model as string | null) ?? null,
     createdAt: iso(row.created_at),
   };
 }

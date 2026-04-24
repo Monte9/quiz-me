@@ -9,6 +9,39 @@
 export type Difficulty = "easy" | "medium" | "hard" | "xhard";
 export type Medium = "text" | "image";
 export type Result = "correct" | "partial" | "wrong" | "skipped";
+export type ModelTier = "haiku" | "sonnet" | "opus";
+
+// Which model tier powers each difficulty. The actual model IDs live in
+// `@/lib/claude` (server-only). This map is UI-safe and drives the tier
+// badge shown in the Ask panel and the question card.
+export const DIFFICULTY_TIER: Record<Difficulty, ModelTier> = {
+  easy: "haiku",
+  medium: "haiku",
+  hard: "sonnet",
+  xhard: "opus",
+};
+
+const TIER_LABELS: Record<ModelTier, string> = {
+  haiku: "Haiku",
+  sonnet: "Sonnet",
+  opus: "Opus",
+};
+
+export function difficultyTierLabel(d: Difficulty): string {
+  return TIER_LABELS[DIFFICULTY_TIER[d]];
+}
+
+// Reverse-map a stored model ID back to a tier label. Falls back to the
+// raw ID so old rows (or future IDs we haven't registered yet) still
+// render something. Pure — no SDK imports.
+export function tierLabelFromModelId(model: string | null | undefined): string {
+  if (!model) return "";
+  const m = model.toLowerCase();
+  if (m.includes("haiku")) return "Haiku";
+  if (m.includes("sonnet")) return "Sonnet";
+  if (m.includes("opus")) return "Opus";
+  return model;
+}
 
 export interface Interest {
   name: string;
@@ -30,6 +63,7 @@ export interface Question {
   thoughtfulnessScore: number | null;
   imagePath: string | null;
   grade: string | null;
+  model: string | null;
   createdAt: string;
 }
 

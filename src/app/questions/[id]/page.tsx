@@ -3,6 +3,7 @@ import { getQuestionById } from "@/lib/users";
 import { BrandBar } from "@/components/BrandBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { QuestionBody } from "@/components/QuestionBody";
+import { tierLabelFromModelId } from "@/lib/quiz-core";
 import { notFound } from "next/navigation";
 
 const difficultyStyles: Record<string, string> = {
@@ -49,33 +50,44 @@ export default async function QuestionPage({
     <div className="flex min-h-screen flex-col">
       <BrandBar />
       <article className="mx-auto w-full max-w-2xl flex-1 px-6 pt-12 pb-16">
-        <div className="mb-6 flex flex-wrap items-center gap-2">
-          <span
-            className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase ${difficultyStyles[q.difficulty] || ""}`}
-          >
-            {difficultyLabels[q.difficulty] || q.difficulty}
-          </span>
-          <span className="text-xs font-medium text-[var(--color-text-dim)]">
-            {q.topic}
-          </span>
-          {q.medium === "image" && (
-            <span className="text-xs text-[var(--color-text-muted)]">
-              · image
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          {/* Left: what this is + who it's for */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase ${difficultyStyles[q.difficulty] || ""}`}
+            >
+              {difficultyLabels[q.difficulty] || q.difficulty}
             </span>
-          )}
-          <Link
-            href={`/${username}`}
-            className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
-          >
-            · @{username}
-          </Link>
-          <span className="ml-auto text-xs text-[var(--color-text-muted)]">
-            {new Date(q.createdAt).toLocaleDateString(undefined, {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </span>
+            <span className="text-xs font-medium text-[var(--color-text-dim)]">
+              {q.topic}
+            </span>
+            {q.medium === "image" && (
+              <span className="text-xs text-[var(--color-text-muted)]">
+                · image
+              </span>
+            )}
+            <Link
+              href={`/${username}`}
+              className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
+            >
+              · @{username}
+            </Link>
+          </div>
+          {/* Right: how + when */}
+          <div className="flex items-center gap-2">
+            {q.model && (
+              <span className="rounded-md bg-[var(--color-surface)] px-2 py-0.5 text-[0.65rem] font-semibold tracking-wide text-[var(--color-text-dim)] uppercase">
+                Claude {tierLabelFromModelId(q.model)}
+              </span>
+            )}
+            <span className="text-xs text-[var(--color-text-muted)]">
+              {new Date(q.createdAt).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+          </div>
         </div>
 
         {q.imagePath && (

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sql } from "@/lib/db";
-import { callJSON } from "@/lib/claude";
+import { callJSON, modelForDifficulty } from "@/lib/claude";
 import { gradingPrompt, skippedReferencePrompt } from "@/lib/prompts";
 import type { Difficulty, Result } from "@/lib/users";
 
@@ -66,6 +66,7 @@ export async function POST(req: Request) {
   const options = (q.options as string[] | null) ?? null;
   const correctIndex = (q.correct_index as number | null) ?? null;
   const now = new Date().toISOString();
+  const model = modelForDifficulty(difficulty);
 
   // Multiple-choice path: instant grading for easy + medium questions that
   // were generated with options. No LLM call — direct index comparison.
@@ -131,6 +132,7 @@ export async function POST(req: Request) {
         user,
         schema: skipReferenceSchema,
         maxTokens: 600,
+        model,
       });
       await sql`
         update questions set
@@ -182,6 +184,7 @@ export async function POST(req: Request) {
         user,
         schema: xhardGradeSchema,
         maxTokens: 600,
+        model,
       });
       const score = Math.max(1, Math.min(5, Math.round(graded.thoughtfulnessScore)));
       await sql`
@@ -207,6 +210,7 @@ export async function POST(req: Request) {
       user,
       schema: easyMedHardGradeSchema,
       maxTokens: 400,
+      model,
     });
     const result: Result = graded.result;
     await sql`

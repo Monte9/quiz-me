@@ -10,6 +10,7 @@ import {
   type Question,
   type Result,
 } from "@/lib/quiz-core";
+import { difficultyTierLabel } from "@/lib/quiz-core";
 import { QuestionBody } from "@/components/QuestionBody";
 
 type State =
@@ -321,11 +322,14 @@ export function AskMePanel({
               <h3 className="text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
                 Ask Ash
               </h3>
+              <span className="rounded-md bg-[var(--color-surface)] px-2 py-0.5 text-[0.65rem] font-semibold tracking-wide text-[var(--color-text-dim)] uppercase">
+                Claude {difficultyTierLabel(difficulty)}
+              </span>
             </div>
 
             <div className="font-display mb-3 text-2xl leading-snug font-semibold text-[var(--color-text)] sm:text-3xl">
-              <span className="block">Quizzing you on</span>
-              <span className="block">
+              <span className="block sm:inline">Quizzing you on</span>{" "}
+              <span className="block sm:inline">
                 <span className="relative inline-block" ref={topicRef}>
                   <button
                     type="button"
@@ -361,8 +365,8 @@ export function AskMePanel({
                   )}
                 </span>{" "}
                 with
-              </span>
-              <span className="block">
+              </span>{" "}
+              <span className="block sm:inline">
                 <span className="relative inline-block" ref={diffRef}>
                   <button
                     type="button"
@@ -533,6 +537,9 @@ export function AskMePanel({
               <span className="text-xs font-medium text-[var(--color-text-dim)]">
                 {state.topic}
               </span>
+              <span className="ml-auto rounded-md bg-[var(--color-surface)] px-2 py-0.5 text-[0.65rem] font-semibold tracking-wide text-[var(--color-text-dim)] uppercase">
+                Claude {difficultyTierLabel(state.difficulty)}
+              </span>
             </div>
 
             <QuestionBody
@@ -637,6 +644,9 @@ export function AskMePanel({
                 </span>
                 <span className="text-xs font-medium text-[var(--color-text-dim)]">
                   {state.topic}
+                </span>
+                <span className="ml-auto rounded-md bg-[var(--color-surface)] px-2 py-0.5 text-[0.65rem] font-semibold tracking-wide text-[var(--color-text-dim)] uppercase">
+                  Claude {difficultyTierLabel(state.difficulty)}
                 </span>
               </div>
 
@@ -863,8 +873,11 @@ function DifficultyHint({ d }: { d: Difficulty }) {
     xhard: "research",
   };
   return (
-    <span className="text-[0.65rem] text-[var(--color-text-muted)]">
-      {label[d]}
+    <span className="flex items-center gap-2 text-[0.65rem] text-[var(--color-text-muted)]">
+      <span>{label[d]}</span>
+      <span className="rounded bg-[var(--color-surface)] px-1.5 py-0.5 font-semibold">
+        {difficultyTierLabel(d)}
+      </span>
     </span>
   );
 }

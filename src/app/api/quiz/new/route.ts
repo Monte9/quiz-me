@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sql } from "@/lib/db";
-import { callJSON } from "@/lib/claude";
+import { callJSON, modelForDifficulty } from "@/lib/claude";
 import { discoverGenerationPrompt, generationPrompt } from "@/lib/prompts";
 import {
   difficultySchema,
@@ -62,6 +62,7 @@ export async function POST(req: Request) {
 
   let topic: string;
   let gen: z.infer<typeof genOutputSchema>;
+  const model = modelForDifficulty(difficulty);
 
   if (isDiscover) {
     const interestNames = ctx.interests.map((i) => i.name);
@@ -79,6 +80,7 @@ export async function POST(req: Request) {
         user,
         schema: genOutputSchema,
         maxTokens: 1500,
+        model,
       });
     } catch (err) {
       console.error("claude discover generation failed", err);
@@ -110,6 +112,7 @@ export async function POST(req: Request) {
         user,
         schema: genOutputSchema,
         maxTokens: 1500,
+        model,
       });
     } catch (err) {
       console.error("claude generation failed", err);
@@ -154,14 +157,14 @@ export async function POST(req: Request) {
       id, username, difficulty, medium, topic, question, answer_key,
       options, correct_index,
       user_answer, result, thoughtfulness_score, image_path, grade,
-      status, created_at, graded_at
+      model, status, created_at, graded_at
     )
     values (
       ${id}, ${username}, ${difficulty}, 'text', ${topic},
       ${gen.question}, ${answerKey},
       ${options ? JSON.stringify(options) : null}::jsonb, ${correctIndex},
       null, null, null, null, null,
-      'pending', ${now.toISOString()}, null
+      ${model}, 'pending', ${now.toISOString()}, null
     )
   `;
 
