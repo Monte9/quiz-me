@@ -156,7 +156,15 @@ export function AskMePanel({
   const diffRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     function onDown(e: MouseEvent) {
-      const t = e.target as Node;
+      const t = e.target as Element | null;
+      if (!t) return;
+      // Clicks inside a modal dialog (mobile bottom-sheets) never count
+      // as "outside" — the dialog lives outside the anchor refs and
+      // handles its own dismissal (backdrop + close button + onPick).
+      // Without this guard, `mousedown` on a pill would fire before
+      // React processes the pill's `onClick`, unmount the dialog, and
+      // swallow the topic/difficulty change.
+      if (t.closest('[role="dialog"]')) return;
       if (topicRef.current && !topicRef.current.contains(t)) {
         setShowTopic(false);
       }
@@ -269,10 +277,9 @@ export function AskMePanel({
         grade: data.grade ?? null,
         answerKey: data.answerKey ?? "",
       });
-      // Auto-open the answer key on MC reveals so users learn from it.
-      // Freeform (hard/xhard) keeps it collapsed — the grade carries
-      // most of the signal there and the key can be long.
-      setShowAnswerKey(prev.options !== null);
+      // Freeform (hard/xhard) starts with the answer key collapsed —
+      // MC reveals ignore this flag and render the key inline.
+      setShowAnswerKey(false);
       router.refresh();
     } catch (e) {
       setError(errMsg(e));
@@ -367,33 +374,19 @@ export function AskMePanel({
                       {showDifficulty ? "▴" : "▾"}
                     </span>
                   </button>
+                  {/* Desktop dropdown (sm+) */}
                   {showDifficulty && (
                     <div
                       role="listbox"
-                      className="absolute top-full left-1/2 z-20 mt-2 w-56 max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-hidden rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-hover)] p-1 text-sm shadow-2xl ring-1 ring-black/40"
+                      className="absolute top-full left-1/2 z-20 mt-2 hidden w-56 -translate-x-1/2 overflow-hidden rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-hover)] p-1 text-sm shadow-2xl ring-1 ring-black/40 sm:block"
                     >
-                      {DIFFICULTIES.map((d) => (
-                        <button
-                          key={d}
-                          type="button"
-                          role="option"
-                          aria-selected={difficulty === d}
-                          onClick={() => {
-                            persistDifficulty(d);
-                            setShowDifficulty(false);
-                          }}
-                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors ${
-                            difficulty === d
-                              ? "bg-[var(--color-accent-wash)] text-[var(--color-accent)]"
-                              : "text-[var(--color-text-dim)] hover:bg-[var(--color-surface)]"
-                          }`}
-                        >
-                          <span className="font-medium">
-                            {difficultyLabels[d]}
-                          </span>
-                          <DifficultyHint d={d} />
-                        </button>
-                      ))}
+                      <DifficultyPickerContent
+                        difficulty={difficulty}
+                        onPick={(d) => {
+                          persistDifficulty(d);
+                          setShowDifficulty(false);
+                        }}
+                      />
                     </div>
                   )}
                 </span>{" "}
@@ -437,6 +430,44 @@ export function AskMePanel({
                       setShowTopic(false);
                     }}
                     hideHeading
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Mobile bottom-sheet difficulty picker */}
+            {showDifficulty && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Pick difficulty"
+                className="fixed inset-0 z-40 flex items-end sm:hidden"
+              >
+                <div
+                  className="absolute inset-0 bg-black/70"
+                  onClick={() => setShowDifficulty(false)}
+                  aria-hidden
+                />
+                <div className="relative max-h-[85vh] w-full overflow-auto rounded-t-2xl border-x border-t border-[var(--color-border-strong)] bg-[var(--color-surface-hover)] p-5 shadow-2xl">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h4 className="text-xs font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+                      Pick difficulty
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setShowDifficulty(false)}
+                      aria-label="Close"
+                      className="text-lg text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <DifficultyPickerContent
+                    difficulty={difficulty}
+                    onPick={(d) => {
+                      persistDifficulty(d);
+                      setShowDifficulty(false);
+                    }}
                   />
                 </div>
               </div>
@@ -589,98 +620,119 @@ export function AskMePanel({
           </div>
         )}
 
-        {state.kind === "revealed" && (
-          <div>
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              <span
-                className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase ${difficultyAccent[state.difficulty]}`}
-              >
-                {difficultyBadge[state.difficulty]}
-              </span>
-              <span className="text-xs font-medium text-[var(--color-text-dim)]">
-                {state.topic}
-              </span>
-            </div>
-
-            <p className="font-display mb-4 text-xl leading-snug font-semibold text-[var(--color-text)] sm:text-2xl">
-              {state.question}
-            </p>
-
-            {state.userAnswer ? (
-              <div
-                className={`mb-4 rounded-lg border p-4 ${
-                  state.result
-                    ? resultCardStyles[state.result]
-                    : "border-[var(--color-border)] bg-[var(--color-surface)]/60"
-                }`}
-              >
-                <div className="mb-1 flex flex-wrap items-center gap-2">
-                  {state.thoughtfulnessScore !== null ? (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-accent-glow)] px-2 py-0.5 text-[0.7rem] font-semibold text-[var(--color-accent)]">
-                      {state.thoughtfulnessScore}/5 thoughtfulness
-                    </span>
-                  ) : state.result ? (
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold uppercase ${resultStyles[state.result]}`}
-                    >
-                      {resultLabels[state.result]}
-                    </span>
-                  ) : null}
-                  <div className="text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
-                    Your answer
-                  </div>
-                </div>
-                <p className="text-sm whitespace-pre-wrap text-[var(--color-text-dim)]">
-                  {state.userAnswer}
-                </p>
-              </div>
-            ) : state.result ? (
-              <div className="mb-4">
+        {state.kind === "revealed" && (() => {
+          // MC reveals (easy/medium) get the simpler layout: pill inside
+          // the tinted card, answer key always inline below. Freeform
+          // (hard/xhard) keeps the "Your answer" label and the toggle
+          // because written answers benefit from the framing and the
+          // answer keys can be long.
+          const isMC =
+            state.difficulty === "easy" || state.difficulty === "medium";
+          return (
+            <div>
+              <div className="mb-4 flex flex-wrap items-center gap-2">
                 <span
-                  className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold uppercase ${resultStyles[state.result]}`}
+                  className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase ${difficultyAccent[state.difficulty]}`}
                 >
-                  {resultLabels[state.result]}
+                  {difficultyBadge[state.difficulty]}
+                </span>
+                <span className="text-xs font-medium text-[var(--color-text-dim)]">
+                  {state.topic}
                 </span>
               </div>
-            ) : null}
 
-            {state.grade && (
-              <div className="mb-4 rounded-lg border border-[var(--color-accent-dim)]/40 bg-[var(--color-accent-wash)] p-4">
-                <div className="mb-1 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-accent)] uppercase">
-                  Ash's grade
+              <p className="font-display mb-4 text-xl leading-snug font-semibold text-[var(--color-text)] sm:text-2xl">
+                {state.question}
+              </p>
+
+              {state.userAnswer ? (
+                <div
+                  className={`mb-4 rounded-lg border p-4 ${
+                    state.result
+                      ? resultCardStyles[state.result]
+                      : "border-[var(--color-border)] bg-[var(--color-surface)]/60"
+                  }`}
+                >
+                  <div className="mb-1 flex flex-wrap items-center gap-2">
+                    {state.thoughtfulnessScore !== null ? (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-accent-glow)] px-2 py-0.5 text-[0.7rem] font-semibold text-[var(--color-accent)]">
+                        {state.thoughtfulnessScore}/5 thoughtfulness
+                      </span>
+                    ) : state.result ? (
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold uppercase ${resultStyles[state.result]}`}
+                      >
+                        {resultLabels[state.result]}
+                      </span>
+                    ) : null}
+                    {!isMC && (
+                      <div className="text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+                        Your answer
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm whitespace-pre-wrap text-[var(--color-text-dim)]">
+                    {state.userAnswer}
+                  </p>
                 </div>
-                <p className="text-sm leading-relaxed text-[var(--color-text)]">
-                  {state.grade}
-                </p>
-              </div>
-            )}
+              ) : state.result ? (
+                <div className="mb-4">
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold uppercase ${resultStyles[state.result]}`}
+                  >
+                    {resultLabels[state.result]}
+                  </span>
+                </div>
+              ) : null}
 
-            <button
-              type="button"
-              onClick={() => setShowAnswerKey((v) => !v)}
-              className="text-xs font-semibold tracking-[0.15em] text-[var(--color-text-muted)] uppercase transition-colors hover:text-[var(--color-accent)]"
-            >
-              {showAnswerKey ? "Hide answer key" : "Show answer key"}
-            </button>
-            {showAnswerKey && (
-              <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/60 p-4">
-                <p className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--color-text-dim)]">
-                  {state.answerKey}
-                </p>
-              </div>
-            )}
+              {state.grade && (
+                <div className="mb-4 rounded-lg border border-[var(--color-accent-dim)]/40 bg-[var(--color-accent-wash)] p-4">
+                  <div className="mb-1 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-accent)] uppercase">
+                    Ash&apos;s grade
+                  </div>
+                  <p className="text-sm leading-relaxed text-[var(--color-text)]">
+                    {state.grade}
+                  </p>
+                </div>
+              )}
 
-            <div className="mt-5 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={reset}
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-bg)] transition-all hover:bg-[var(--color-accent-bright)] hover:shadow-[0_0_30px_var(--color-accent-glow)]"
-              >
-                Ask another →
-              </button>
+              {isMC ? (
+                <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/60 p-4">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--color-text-dim)]">
+                    {state.answerKey}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowAnswerKey((v) => !v)}
+                    className="text-xs font-semibold tracking-[0.15em] text-[var(--color-text-muted)] uppercase transition-colors hover:text-[var(--color-accent)]"
+                  >
+                    {showAnswerKey ? "Hide answer key" : "Show answer key"}
+                  </button>
+                  {showAnswerKey && (
+                    <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/60 p-4">
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--color-text-dim)]">
+                        {state.answerKey}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-bg)] transition-all hover:bg-[var(--color-accent-bright)] hover:shadow-[0_0_30px_var(--color-accent-glow)]"
+                >
+                  Ask another →
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </section>
   );
@@ -783,6 +835,36 @@ function TopicChip({
     >
       {label}
     </button>
+  );
+}
+
+function DifficultyPickerContent({
+  difficulty,
+  onPick,
+}: {
+  difficulty: Difficulty;
+  onPick: (d: Difficulty) => void;
+}) {
+  return (
+    <div>
+      {DIFFICULTIES.map((d) => (
+        <button
+          key={d}
+          type="button"
+          role="option"
+          aria-selected={difficulty === d}
+          onClick={() => onPick(d)}
+          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors ${
+            difficulty === d
+              ? "bg-[var(--color-accent-wash)] text-[var(--color-accent)]"
+              : "text-[var(--color-text-dim)] hover:bg-[var(--color-surface)]"
+          }`}
+        >
+          <span className="font-medium">{difficultyLabels[d]}</span>
+          <DifficultyHint d={d} />
+        </button>
+      ))}
+    </div>
   );
 }
 
