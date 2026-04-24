@@ -57,11 +57,16 @@ export function pickTopic(
   recentTopics: string[],
   preferred?: string | null,
 ): string | null {
+  // Any explicit non-empty topic (from Your topics, Recent pills, or a past
+  // Discover result) is honored as-is. The Recent pills specifically exist
+  // so you can re-quiz yourself on topics outside your interests list.
+  // "discover" is handled upstream and never reaches this function.
+  if (preferred && preferred !== "discover") return preferred;
+
   const names = interests.map((i) => i.name);
   if (names.length === 0) return null;
 
-  if (preferred && names.includes(preferred)) return preferred;
-
+  // Random mode: prefer interests not seen in the last few questions.
   const fresh = names.filter((n) => !recentTopics.includes(n));
   const pool = fresh.length > 0 ? fresh : names;
   return pool[Math.floor(Math.random() * pool.length)];
