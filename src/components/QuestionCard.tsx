@@ -29,6 +29,22 @@ const resultLabels: Record<string, string> = {
   skipped: "Skipped",
 };
 
+// For xhard cards we only want the opening context paragraph in the preview.
+// The full structured body (Constraints list, **Your task:** callout) is
+// reserved for the detail page.
+function previewText(q: Question): string {
+  if (q.difficulty !== "xhard") return q.question;
+  const blocks = q.question.split(/\n{2,}/);
+  for (const raw of blocks) {
+    const block = raw.trim();
+    if (!block) continue;
+    if (/^constraints\s*:/i.test(block)) continue;
+    if (/^\*\*your task\s*:\*\*/i.test(block)) continue;
+    return block;
+  }
+  return q.question;
+}
+
 export function QuestionCard({ q }: { q: Question }) {
   const showScore = q.difficulty === "xhard" && q.thoughtfulnessScore !== null;
   return (
@@ -66,8 +82,8 @@ export function QuestionCard({ q }: { q: Question }) {
           </div>
         )}
 
-        <p className="mb-5 flex-1 text-[0.95rem] leading-relaxed text-[var(--color-text)]">
-          {q.question}
+        <p className="mb-5 line-clamp-6 flex-1 text-[0.95rem] leading-relaxed text-[var(--color-text)]">
+          {previewText(q)}
         </p>
 
         <div className="flex items-center gap-2">
