@@ -21,7 +21,9 @@ const bodySchema = z.object({
 
 const genOutputSchema = z.object({
   question: z.string().min(1),
-  answerKey: z.string().min(1),
+  // answerKey is required for easy/medium (shown on reveal + /questions/[id]),
+  // and no longer generated for hard/xhard (grade carries reference now).
+  answerKey: z.string().optional(),
   slug: z.string().optional().default(""),
   options: z.array(z.string().min(1)).optional(),
   correctIndex: z.number().int().min(0).optional(),
@@ -115,9 +117,12 @@ export async function POST(req: Request) {
     }
   }
 
-  // Validate multiple-choice shape for easy + medium.
+  // Validate multiple-choice shape for easy + medium. MC requires answerKey
+  // too (displayed on reveal). Freeform hard/xhard intentionally skips
+  // answerKey — the grade at submit time carries the reference material.
   let options: string[] | null = null;
   let correctIndex: number | null = null;
+  let answerKey: string | null = null;
   if (difficulty === "easy" || difficulty === "medium") {
     const expectedLen = difficulty === "easy" ? 2 : 4;
     if (
@@ -125,17 +130,20 @@ export async function POST(req: Request) {
       gen.options.length !== expectedLen ||
       gen.correctIndex === undefined ||
       gen.correctIndex < 0 ||
-      gen.correctIndex >= expectedLen
+      gen.correctIndex >= expectedLen ||
+      !gen.answerKey
     ) {
-      console.error("claude returned invalid options payload", {
+      console.error("claude returned invalid MC payload", {
         difficulty,
         options: gen.options,
         correctIndex: gen.correctIndex,
+        hasAnswerKey: Boolean(gen.answerKey),
       });
       return NextResponse.json({ error: "generation returned invalid options" }, { status: 502 });
     }
     options = gen.options;
     correctIndex = gen.correctIndex;
+    answerKey = gen.answerKey;
   }
 
   const now = new Date();
@@ -150,7 +158,7 @@ export async function POST(req: Request) {
     )
     values (
       ${id}, ${username}, ${difficulty}, 'text', ${topic},
-      ${gen.question}, ${gen.answerKey},
+      ${gen.question}, ${answerKey},
       ${options ? JSON.stringify(options) : null}::jsonb, ${correctIndex},
       null, null, null, null, null,
       'pending', ${now.toISOString()}, null

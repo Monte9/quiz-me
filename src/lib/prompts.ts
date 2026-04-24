@@ -17,13 +17,13 @@ JSON keys (exact): "question" (string), "options" (array of exactly 4 strings), 
 
   hard: `Shape: a short-essay concept question. "How does X work?" or "Why does Y happen?"
 Example: "How does a transformer model's attention mechanism actually work?"
-JSON keys (exact): "question" (string), "answerKey" (a rigorous 5–8 sentence reference answer — what a correct, well-informed explanation would cover, including the concepts that separate a B+ from an A+), "slug" (short kebab-case, 2–4 words).`,
+JSON keys (exact): "question" (string), "slug" (short kebab-case, 2–4 words).`,
 
   xhard: `Shape: propose a solution to an unsolved real-world problem.
 CRITICAL: the "question" field MUST include 1–2 paragraphs of context before asking the actual question.
 Context paragraphs describe: current state of the problem, what's been tried, who's tried it, why approaches have stalled.
 Then end with the direct ask, e.g. "What approach would you propose, and why?"
-JSON keys (exact): "question" (string), "answerKey" (a "reference framing" — 5–8 sentences describing the dimensions a strong proposal would consider: input variables, tradeoffs, stakeholders, second-order effects, failure modes), "slug" (short kebab-case, 2–4 words).`,
+JSON keys (exact): "question" (string), "slug" (short kebab-case, 2–4 words).`,
 };
 
 export function generationPrompt(
@@ -72,29 +72,36 @@ The grade is one sentence max. Tell him what was right or wrong and the actual a
 "wrong" = off-base.
 The grade is one sentence max.`,
 
-  hard: `Return: {"result": "correct" | "partial" | "wrong", "grade": "<one-line feedback>"}.
+  hard: `Return: {"result": "correct" | "partial" | "wrong", "grade": "<3–5 sentence feedback that doubles as the reference answer>"}.
 "correct" = covered the core mechanism/reasoning.
 "partial" = right instinct but missed a key dimension.
 "wrong" = misunderstood the concept.
-The grade is ONE sentence naming what was sharp, what was missed, or what a stronger take looks like.`,
+The grade should (a) say what Monte got right or wrong in one sentence, then (b) explain the correct mechanism or reasoning in 2–4 sentences. A reader who never saw Monte's answer should still learn the concept from the grade.`,
 
-  xhard: `Return: {"thoughtfulnessScore": 1 | 2 | 3 | 4 | 5, "grade": "<2–3 sentence feedback>"}.
+  xhard: `Return: {"thoughtfulnessScore": 1 | 2 | 3 | 4 | 5, "grade": "<4–6 sentence feedback that doubles as the reference framing>"}.
 Rubric:
 1 = surface take, missed major dimensions
 2 = starts on the right track but thin
 3 = solid framing, missing a dimension or two
 4 = strong proposal, considers most tradeoffs
 5 = considers all major input variables, weighs tradeoffs, anticipates second-order effects
-The grade names the score's reason and what dimensions he missed or nailed.`,
+The grade should (a) name the dimensions Monte hit or missed, then (b) sketch what a strong proposal would consider — input variables, tradeoffs, stakeholders, second-order effects, failure modes. A reader who never saw Monte's answer should still see the shape of a strong answer.`,
 };
 
 export function gradingPrompt(
   difficulty: Difficulty,
   question: string,
-  answerKey: string,
+  answerKey: string | null,
   userAnswer: string,
 ): { system: string; user: string } {
   const system = `${SHARED_GRADE_SYSTEM}\n\nDifficulty: ${difficulty}\n${GRADE_RULES[difficulty]}`;
-  const user = `Question:\n${question}\n\nReference answer:\n${answerKey}\n\nMonte's answer:\n${userAnswer}\n\nGrade it. JSON only.`;
+  // easy/medium carry a pre-generated reference answer so grading stays
+  // consistent with the answer-key shown to the user. hard/xhard grade
+  // from scratch — the grade itself is the reference now.
+  const ref =
+    answerKey && answerKey.trim().length > 0
+      ? `\n\nReference answer:\n${answerKey}`
+      : "";
+  const user = `Question:\n${question}${ref}\n\nMonte's answer:\n${userAnswer}\n\nGrade it. JSON only.`;
   return { system, user };
 }

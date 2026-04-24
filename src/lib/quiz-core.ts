@@ -22,7 +22,7 @@ export interface Question {
   medium: Medium;
   topic: string;
   question: string;
-  answerKey: string;
+  answerKey: string | null;
   options: string[] | null;
   correctIndex: number | null;
   userAnswer: string | null;

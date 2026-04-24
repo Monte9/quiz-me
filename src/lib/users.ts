@@ -26,7 +26,7 @@ function mapQuestion(row: Record<string, unknown>): Question {
     medium: row.medium as Medium,
     topic: row.topic as string,
     question: row.question as string,
-    answerKey: row.answer_key as string,
+    answerKey: (row.answer_key as string | null) ?? null,
     options: (row.options as string[] | null) ?? null,
     correctIndex: (row.correct_index as number | null) ?? null,
     userAnswer: (row.user_answer as string | null) ?? null,

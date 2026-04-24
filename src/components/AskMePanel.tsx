@@ -39,7 +39,7 @@ type State =
       result: Result | null;
       thoughtfulnessScore: number | null;
       grade: string | null;
-      answerKey: string;
+      answerKey: string | null;
     };
 
 const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard", "xhard"];
@@ -98,7 +98,7 @@ interface GradeResponse {
   result: Result | null;
   grade: string | null;
   thoughtfulnessScore: number | null;
-  answerKey: string;
+  answerKey: string | null;
 }
 
 function errMsg(e: unknown): string {
@@ -132,7 +132,9 @@ export function AskMePanel({
   const [answer, setAnswer] = useState("");
   const [topic, setTopic] = useState<string>("");
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
-  const [showAnswerKey, setShowAnswerKey] = useState(false);
+  // Freeform (hard/xhard) shows Ash's grade behind a toggle. MC (easy/medium)
+  // renders the answer key inline and ignores this flag.
+  const [showGrade, setShowGrade] = useState(false);
   const [showTopic, setShowTopic] = useState(false);
   const [showDifficulty, setShowDifficulty] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -197,7 +199,7 @@ export function AskMePanel({
   async function startQuiz() {
     setError(null);
     setAnswer("");
-    setShowAnswerKey(false);
+    setShowGrade(false);
     setShowTopic(false);
     setShowDifficulty(false);
     setState({ kind: "loading" });
@@ -275,11 +277,13 @@ export function AskMePanel({
         result: data.result ?? null,
         thoughtfulnessScore: data.thoughtfulnessScore ?? null,
         grade: data.grade ?? null,
-        answerKey: data.answerKey ?? "",
+        answerKey: data.answerKey ?? null,
       });
-      // Freeform (hard/xhard) starts with the answer key collapsed —
-      // MC reveals ignore this flag and render the key inline.
-      setShowAnswerKey(false);
+      // Freeform (hard/xhard): auto-expand Ash's grade unless the answer
+      // was fully correct. xhard has result=null (scored on thoughtfulness),
+      // so it always auto-expands — the grade carries the reference framing.
+      // MC ignores this flag.
+      setShowGrade(data.result !== "correct");
       router.refresh();
     } catch (e) {
       setError(errMsg(e));
@@ -290,7 +294,7 @@ export function AskMePanel({
   function reset() {
     setState({ kind: "idle" });
     setAnswer("");
-    setShowAnswerKey(false);
+    setShowGrade(false);
     setError(null);
   }
 
@@ -621,11 +625,12 @@ export function AskMePanel({
         )}
 
         {state.kind === "revealed" && (() => {
-          // MC reveals (easy/medium) get the simpler layout: pill inside
-          // the tinted card, answer key always inline below. Freeform
-          // (hard/xhard) keeps the "Your answer" label and the toggle
-          // because written answers benefit from the framing and the
-          // answer keys can be long.
+          // Same shape for MC and freeform: tinted card with result pill +
+          // user's answer, then a second card below.
+          //   MC (easy/medium): second card = answer key, always inline.
+          //   Freeform (hard/xhard): second card = Ash's grade, behind a
+          //   toggle. Auto-expand unless result is "correct" — xhard has
+          //   result=null (scored on thoughtfulness) so it always expands.
           const isMC =
             state.difficulty === "easy" || state.difficulty === "medium";
           return (
@@ -665,11 +670,6 @@ export function AskMePanel({
                         {resultLabels[state.result]}
                       </span>
                     ) : null}
-                    {!isMC && (
-                      <div className="text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
-                        Your answer
-                      </div>
-                    )}
                   </div>
                   <p className="text-sm whitespace-pre-wrap text-[var(--color-text-dim)]">
                     {state.userAnswer}
@@ -685,41 +685,32 @@ export function AskMePanel({
                 </div>
               ) : null}
 
-              {state.grade && (
-                <div className="mb-4 rounded-lg border border-[var(--color-accent-dim)]/40 bg-[var(--color-accent-wash)] p-4">
-                  <div className="mb-1 text-[0.65rem] font-semibold tracking-[0.2em] text-[var(--color-accent)] uppercase">
-                    Ash&apos;s grade
-                  </div>
-                  <p className="text-sm leading-relaxed text-[var(--color-text)]">
-                    {state.grade}
-                  </p>
-                </div>
-              )}
-
-              {isMC ? (
-                <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/60 p-4">
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--color-text-dim)]">
-                    {state.answerKey}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setShowAnswerKey((v) => !v)}
-                    className="text-xs font-semibold tracking-[0.15em] text-[var(--color-text-muted)] uppercase transition-colors hover:text-[var(--color-accent)]"
-                  >
-                    {showAnswerKey ? "Hide answer key" : "Show answer key"}
-                  </button>
-                  {showAnswerKey && (
-                    <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/60 p-4">
+              {isMC
+                ? state.answerKey && (
+                    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/60 p-4">
                       <p className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--color-text-dim)]">
                         {state.answerKey}
                       </p>
                     </div>
+                  )
+                : state.grade && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setShowGrade((v) => !v)}
+                        className="text-xs font-semibold tracking-[0.15em] text-[var(--color-text-muted)] uppercase transition-colors hover:text-[var(--color-accent)]"
+                      >
+                        {showGrade ? "Hide Ash's grade" : "Show Ash's grade"}
+                      </button>
+                      {showGrade && (
+                        <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/60 p-4">
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--color-text-dim)]">
+                            {state.grade}
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
-                </>
-              )}
 
               <div className="mt-5 flex flex-wrap gap-2">
                 <button

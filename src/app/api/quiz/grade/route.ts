@@ -134,7 +134,7 @@ export async function POST(req: Request) {
     const { system, user } = gradingPrompt(
       difficulty,
       q.question as string,
-      q.answer_key as string,
+      (q.answer_key as string | null) ?? null,
       userAnswer,
     );
 
