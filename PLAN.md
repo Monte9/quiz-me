@@ -16,29 +16,26 @@ Four difficulty tiers stretch it from casual (easy = yes/no) to serious (xhard =
 
 Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me). **Phases 1–5 shipped.**
 
-**Stack:** Next.js 16 + Tailwind 4, Neon Postgres (HTTP driver), Anthropic SDK direct (`claude-sonnet-4-6`), Zod validation, Vercel auto-deploy. Emerald-on-black editorial theme (Fraunces serif hero).
+**Stack:** Next.js 16 + Tailwind 4, Neon Postgres (HTTP driver), Anthropic SDK direct, Zod validation, Vercel auto-deploy. Emerald-on-black editorial theme (Fraunces serif hero). Four migrations applied; CI (GitHub Actions, `db-migrate.yml`) re-runs on push when `migrations/**` or `scripts/migrate.ts` changes.
 
-**Routes:**
-- `/` — marketing landing: rotating hero (two eyebrow+H1 pairs, 5s crossfade), stats row, pillar cards, recap CTA. No inline demo — "Try it now →" sends you to `/monte`.
-- `/users` — user cards + join card
-- `/[user]` — per-user log: serif name, inline stats, interests, paginated questions, AskMePanel inline
-- `/questions` — all questions, difficulty + topic filters, stats reflect filter state
-- `/questions/[id]` — question detail with attribution link back to `/[user]`
-- `/api/quiz/new` + `/api/quiz/grade` — Zod-validated, parameterized by username
+**Routes:** `/` marketing landing (rotating hero, stats, pillars, recap CTA) · `/users` · `/[user]` per-user log with AskMePanel inline · `/questions` (filterable) · `/questions/[id]` detail · `POST /api/quiz/new` + `/api/quiz/grade`.
 
-**Landing + chrome (Phase 5):** BrandBar top-left with top-right nav (Play → `/monte`, Users, Questions) on every route. No in-content back links — browser back + top nav cover navigation. `<Hero />` (client, rotating), `<StatsSection />`, `<PillarCards />`, `<RecapCTA />` anchor the landing. BRAND.md is the single source for copy.
+**AskMePanel:** inline-token sentence — `Quizzing you on [topic ▾] with [difficulty ▾] difficulty.` — single **Quiz me →** CTA. Tokens open inline pickers (Random / Discover / Your topics / Recent for topic; four difficulties with one-word hint + tier chip). Mobile: bottom-sheet pickers. Context stats subtitle (`X {topic} questions at {diff} · Y% correct ↑`) kicks in at ≥3 graded. Last topic+difficulty persist in `localStorage`. Tinted answer card on reveal. Pure helpers live in `@/lib/quiz-core` so the client bundle has no DB import.
 
 **Question mechanics (Phase 4):**
 - **Topic-scoped dedup** — last 20 questions on the picked topic passed to Claude with "do not repeat or paraphrase."
-- **Multiple choice (easy + medium)** — easy = binary Yes/No, medium = 4 plausible distractors from same category/era. `options jsonb` + `correct_index int` on questions (migration 002). Grading is **instant** (direct index compare, no LLM call); `correctIndex` never leaves the server.
-- **Freeform (hard + xhard)** — unchanged; LLM grades with difficulty-specific rubrics.
-- **Discover mode** — topic picker has `random` (user's interests), `discover` (Claude picks fresh, excludes interests ∪ all past-quizzed topics), or a specific topic. Discover's picked topic is stored on the row, so the discovery pool keeps shrinking with play.
+- **Multiple choice (easy + medium)** — easy = binary Yes/No, medium = 4 plausible distractors. Grading is instant (index compare, no LLM); `correctIndex` never leaves the server. No Skip button (MC is low-friction).
+- **Freeform (hard + xhard)** — LLM grades with difficulty-specific rubrics; reference answer shown alongside grade (not prefilled). Skip still calls the LLM to produce a reference so the user learns.
+- **xhard structured format** — questions render as context paragraph(s) → Your task callout → Constraints bullet list (via `<QuestionBody />`), parsed from LLM output with defensive section reorder. Recent cards clamp to 6 lines with preview-text stripped of structural markers; click-through to detail for full.
+- **Discover mode** — topic picker has `random` (user's interests), `discover` (Claude picks fresh, excludes interests ∪ all past-quizzed topics), or a specific topic. Discover's picked topic is stored on the row.
 
-**AskMePanel UX refresh:** Idle state is now an inline-token sentence — `Quizzing you on [topic ▾] with [difficulty ▾] difficulty.` — with a single **Quiz me →** primary CTA. Tokens open inline dropdowns (topic picker has Random / Discover / Your topics / Recent; difficulty has all four with a one-word hint each). A stats subtitle shows context for the current slice (`X {topic} questions at {diff} · Y% correct ↑`) when ≥3 graded; xhard shows thoughtfulness avg instead of correctness; Discover shows breadth. Last topic + difficulty persist in `localStorage` (`qm-last-topic:<user>`, `qm-last-difficulty:<user>`).
+**Model tiering (per question):** `easy/medium → Haiku`, `hard → Sonnet`, `xhard → Opus`. Tier chip shown next to difficulty picker + on question cards + on detail page. `model` column on `questions` (migration 004). IDs mapped in `@/lib/claude` (server) with client-safe tier label in `@/lib/quiz-core`.
 
-**Shared infra:** `<QuestionList />`, `<Pagination />`, `<BrandBar />`, `<SiteFooter />`, 308 redirect `/:user/q/:id → /questions/:id`.
+**User page:** simpler header, leaderboard rank badge, interests, paginated questions. `/questions` supports user filter.
 
-**Data:** `users` + `questions` tables, seeded from `users.json`. 2 users (Monte claimed, Suvarcha unclaimed with invite `SU-CC23CA`), 11 interests. Skill at [ash-core/skills/quiz-me/SKILL.md](../ash-core/skills/quiz-me/SKILL.md) writes `users.json` + commits; `pnpm db:seed` rebuilds Postgres on demand.
+**Shared infra:** `<QuestionList />`, `<Pagination />`, `<BrandBar />`, `<SiteFooter />`, `<QuestionBody />`, 308 redirect `/:user/q/:id → /questions/:id`.
+
+**Data:** `users` + `questions` tables, seeded from `users.json`. 2 users (Monte claimed, Suvarcha unclaimed with invite `SU-CC23CA`). Skill at [ash-core/skills/quiz-me/SKILL.md](../ash-core/skills/quiz-me/SKILL.md) writes `users.json` + commits; `pnpm db:seed` rebuilds Postgres on demand.
 
 ---
 
@@ -60,6 +57,8 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 | 12 | Dedup scope | Topic-scoped, last 20 questions |
 | 13 | Grading path | Instant index-compare for easy/medium MC; LLM for hard/xhard |
 | 14 | Discover scope | Excludes user's interests AND every past-quizzed topic |
+| 15 | Model tiering | Haiku (easy/medium), Sonnet (hard), Opus (xhard). Stored per question. |
+| 16 | Migrations | Idempotent SQL; CI runs `pnpm db:migrate` on push when migrations change. |
 
 ---
 
@@ -67,115 +66,45 @@ Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [n
 
 ### Phase 6 (active): `/play` guest mode + soft login
 
-Landing is marketing. `/play` is the product surface. Give strangers a 5-question trial without an account; give claimed users a one-click entry that writes to their log.
+Landing is marketing. `/play` becomes the product surface. Strangers get a 5-question MC trial without an account; claimed users get a one-click entry that writes to their log.
 
-**Design decisions (locked up front):**
+**Shape:**
+- New route `/play`, reads `qm-user` cookie. Cookie + user → current AskMePanel. No cookie → `<GuestPlay>` (curated 6-topic grid + free-text; 5 medium-MC questions; counter in `localStorage`).
+- New `POST /api/quiz/try` — stateless, returns `{ question, options, correctIndex, answerKey }`, no DB writes.
+- Soft-login: `/[user]?claim=<inviteCode>` sets `qm-user` cookie (1yr, client-readable). No passwords yet — full auth is a separate parked phase when a third user lands.
+- Flip landing CTAs + BrandBar Play link from `/monte` → `/play`.
+- Monte + Su bootstrap via their invite codes.
 
-| Decision | Choice |
-|---|---|
-| Guest difficulty | **Medium only** (4-choice MC). Instant grade, no second LLM call. Cheap + fast for trial. |
-| Guest topics | **Curated 6-grid** (Roman history, pickleball, jazz, space exploration, AI, cooking) + free-text input for custom. |
-| Guest question API | `POST /api/quiz/try` — stateless. Returns `{ question, options, correctIndex, answerKey }` (correctIndex leaks on guest path; acceptable because no persistence). |
-| Guest counter | `localStorage: qm-trial-count` (0–5). Soft limit — bypass cost is low, real cap is Claude $. |
-| Guest dedup | `localStorage: qm-trial-topics[]` — the questions already shown this trial, passed to Claude as exclude list. |
-| Soft-login cookie | `qm-user=<username>`, 1 year, client-readable. Set via `?claim=<inviteCode>` on `/[user]` (user proves identity via invite code, no password yet). |
-| Claim CTA (end of trial) | Mailto invite for now (same as landing "Ask for an invite"). Self-serve signup is parked — ships with real auth. |
-| Phase 6 does NOT ship auth | No passwords, no HMAC sessions. Cookie is trust-based for Monte + Su. Full auth is a separate parked phase when third user lands. |
+**Exit:** Stranger → `/play` → 5 MC questions → claim banner. Monte/Su click Play → cookie → AskMePanel on their log.
 
-**Scope:**
-
-1. **New route `/play`** — server component, reads `qm-user` cookie
-   - Cookie + user exists → render AskMePanel defaulting to that account (current `/monte` behavior, moved here)
-   - No cookie → render `<GuestPlay>` component (new)
-
-2. **`<GuestPlay>` component** (new, client)
-   - Header: "You're in guest mode. Here's 5 questions on us."
-   - Counter chip: `2 / 5`
-   - Topic picker: 6-card curated grid + "or type a topic:" input
-   - Question flow: pick topic → see MC question → answer → see grade + answer key → "Next question →"
-   - After 5th answer: panel replaces with claim banner — "Hope you had fun. Want your own log? [Ask for an invite →]"
-
-3. **`POST /api/quiz/try`** (new API route)
-   - Body: Zod-validated `{ topic: string, prior: string[] }`
-   - Reuses existing `generationPrompt` with MC-medium schema
-   - Returns question + options + correctIndex + answerKey to client
-   - No DB writes, no user association
-
-4. **Claim-by-invite on `/[user]`** (soft login)
-   - New query param `?claim=<inviteCode>`
-   - If `inviteCode` matches the user's invite, set `qm-user=<username>` cookie + redirect to `/play`
-   - Invalid code → show normal user page with a small "Invalid code" toast
-   - This replaces the unbuilt claim UI stub for now
-
-5. **CTA flip on landing**
-   - Hero + RecapCTA `Try it now →`: `/monte` → `/play`
-   - BrandBar nav `Play`: `/monte` → `/play`
-   - BRAND.md Copy-by-page updated
-
-6. **Monte + Su bootstrap**
-   - Monte visits `/monte?claim=<his-code>` once → cookie set → all future `/play` visits write to his log
-   - Su can do the same with `SU-CC23CA` when she's ready
-
-**What already landed (pulled forward from Phase 5):**
-- AskMePanel removed from landing ✅
-- CTAs live on the landing pointing to a real surface (currently `/monte`) ✅
-- Top-nav Play link in place ✅
-
-**Exit:** Stranger lands on `/` → clicks Try it now → `/play` → gets 5 MC questions on curated topics → hits claim banner with invite CTA. Monte/Su click Play → cookie recognizes them → land on AskMePanel with their topics loaded, writes to their log.
-
-**Rough size:** 4–6 hours. One new route, one new component, one new API route, one `?claim=` handler, three CTA repoints.
+**Size:** 4–6 hours. Full scope lives in a spec when work starts.
 
 ### Phase 7 (queued): Charts
 
-Cash in the subhead promise ("Charts that track your progress").
-
-**Scope:**
-- **Where they live**: `/[user]/stats` or a tab on `/[user]`. Possibly mirrored on `/play` for guest-session stats.
-- **Three charts** (Recharts):
-  1. Daily activity bar — questions asked per day, last 30 days
-  2. Correct rate line — rolling 7-day %
-  3. Topic breakdown — horizontal bars or pie, questions per topic
-- **Data**: existing `questions` columns (`created_at`, `result`, `topic`, `difficulty`) — no schema changes needed.
-- **Empty states**: first-day-playing copy that doesn't feel broken.
-
-**Flesh out later:** correct-rate by difficulty, streak visualization, topic mastery heatmap.
+Cash in the subhead promise. `/[user]/stats` or a tab. Three Recharts: daily activity bar, rolling correct-rate line, topic breakdown. Data already in `questions` (no schema change). Empty states for day-1 users.
 
 ---
 
 ## Backlog
 
-**Skill coherence gap** — `ash-core/skills/quiz-me/SKILL.md` writes freeform questions to `users.json`; the web UI now generates MC for easy/medium. Skill should emit `options` + `correctIndex` for easy/medium so skill-written and web-written questions have the same shape.
+**Skill coherence gap** — `ash-core/skills/quiz-me/SKILL.md` writes freeform questions to `users.json`; the web UI now generates MC for easy/medium + stores `model`. Skill should emit `options`, `correctIndex`, and `model` so skill-written and web-written questions have the same shape.
 
-**Parked phases** (adjacent to current direction, not actively scheduled):
+**Parked phases:**
+- **Auth + multi-user writes** — HMAC-signed cookie sessions, `/login`/`/logout`, `POST /api/users/claim`, gate `/api/quiz/*` on session, claim UI, 20/day rate limit. Phase 6 soft-login is the cheap precursor.
+- **Telegram / SMS reminders** — daily nudge with one question, or weekly digest. Leverages ash-core reminders infra.
+- **Voice + leaderboard + per-user accent** — voice input via Web Speech, richer leaderboard, per-user accent.
+- **Image mode + polish** — `medium=image` via nano-banana + Vercel Blob, OG cards, spaced repetition, custom domain.
 
-- **Auth + multi-user writes** — HMAC-signed cookie sessions, `/login`/`/logout`, `POST /api/users/claim`, gate `/api/quiz/*` on session, claim flow UI on `/[user]?invite=XXX`, rate limit 20/user/day. Phase 6's soft-login cookie is the cheap precursor; full auth lands when Su or a third user needs private writes.
-- **Telegram / SMS reminders** — Monte's reminder want. Daily nudge with one question, or weekly digest. Likely leverages ash-core reminders infra.
-- **Voice + leaderboard + per-user accent** — voice input via Web Speech, homepage leaderboard, per-user accent color.
-- **Image mode + polish** — `medium=image` via nano-banana + Vercel Blob, OG cards per question, spaced repetition, custom domain.
-
-**Smaller ideas:**
-
-- **Prev/next nav on question detail** — fast browse from `/questions`
-- **Topic display names** — `displayName` on interests; UI falls back to title-cased slug
-- **MC grading transparency** — when user picks wrong, optional one-liner explaining the right answer (one LLM call per wrong MC)
-- **Shared questions** — "question of the day" all users see; compare answers
-- **Admin panel** — Monte generates invites from web UI (skill-only today)
-- **Topic hierarchy** — `history/roman`, `ai/transformers`
-- **Session mode** — "quiz me 5 hard" → batch of 5
-- **Export wrong answers to Anki**
-- **Difficulty auto-calibration per topic** — bump `medium X` → `hard` when you're crushing it
-- **Bcrypt passwords** once > 2 users
-- **Shareable grade cards** — OG image per question for social
-- **Weekly recap email** — streak, correct-rate, top-missed topic
+**Smaller ideas:** prev/next nav on question detail · topic display names · MC wrong-answer one-liner explanation · shared "question of the day" · admin panel for invites · topic hierarchy (`history/roman`) · session mode (batch of 5) · export wrong answers to Anki · per-topic difficulty auto-calibration · bcrypt once >2 users · shareable OG grade cards · weekly recap email.
 
 ---
 
 ## Open Questions
 
-- **xhard thoughtfulness rubric** — what separates 3 from 4 from 5? Short scoring guide needed in SKILL.md before first xhard runs.
-- **Image-response questions** — for `medium=image`, does the user upload a drawing/photo, or does Ash generate and ask about it?
+- **xhard thoughtfulness rubric** — what separates 3 from 4 from 5? Short scoring guide needed in SKILL.md before the first skill-written xhard runs.
+- **Image-response questions** — for `medium=image`, does the user upload a drawing/photo, or does Ash generate an image and ask about it?
 - **Suvarcha's interests** — claim flow asks for 3–5 interests right after password set (when auth lands).
 
 ---
 
-*Updated: 2026-04-18*
+*Updated: 2026-04-24*
