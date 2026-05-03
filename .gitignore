@@ -7,5 +7,16 @@ out/
 .env
 .env.local
 .env.*.local
-.claude/
 .env*.local
+
+# Claude Code / cloud-agent scaffold:
+# Ignore everything in .claude/ except the cloud-agent files we want versioned.
+.claude/*
+!.claude/skills/
+!.claude/skills/**
+!.claude/settings.json
+!.claude/hooks/
+!.claude/hooks/**
+
+# Always ignore Claude Code local overrides
+.claude/settings.local.json
