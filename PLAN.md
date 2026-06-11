@@ -14,7 +14,7 @@ Four difficulty tiers stretch it from casual (easy = yes/no) to serious (xhard =
 
 ## Current State
 
-Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [nexuslabsx/quiz-me](https://github.com/nexuslabsx/quiz-me). **Phases 1–5 shipped.**
+Live at **[quizmenexus.vercel.app](https://quizmenexus.vercel.app)** — repo [monte9/quiz-me](https://github.com/monte9/quiz-me). **Phases 1–5 shipped.**
 
 **Stack:** Next.js 16 + Tailwind 4, Neon Postgres (HTTP driver), Anthropic SDK direct, Zod validation, Vercel auto-deploy. Emerald-on-black editorial theme (Fraunces serif hero). Four migrations applied; CI (GitHub Actions, `db-migrate.yml`) re-runs on push when `migrations/**` or `scripts/migrate.ts` changes.
 

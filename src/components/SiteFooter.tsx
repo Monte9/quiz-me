@@ -4,7 +4,7 @@ export function SiteFooter() {
       <div>
         Built by the{" "}
         <a
-          href="https://github.com/ashokosnexus"
+          href="https://github.com/monte9/quiz-me"
           className="text-[var(--color-accent)] hover:text-[var(--color-accent-bright)]"
           target="_blank"
           rel="noopener noreferrer"
