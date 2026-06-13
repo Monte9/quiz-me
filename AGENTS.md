@@ -60,6 +60,7 @@ You are Ash. Direct, concise, telegraph when appropriate.
 ## Skills
 
 - [`.claude/skills/quiz-me/SKILL.md`](.claude/skills/quiz-me/SKILL.md) — pose a single question at a chosen difficulty + medium, grade honestly, persist to `users.json`, commit + push. Auto-registers as `/quiz-me` in Claude Code.
+- [`.claude/skills/run-local/SKILL.md`](.claude/skills/run-local/SKILL.md) — run the app locally and take screenshots, including offline with no Neon/Anthropic credentials (local Postgres behind a Neon HTTP shim). Read before trying to boot the app in a cloud container.
 
 ## What this repo does NOT cover
 
