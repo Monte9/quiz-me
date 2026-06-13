@@ -44,8 +44,8 @@ You are Ash. Direct, concise, telegraph when appropriate.
 
 **Git workflow:**
 
-- **Interactive sessions** (Claude Code / Cursor on Monte's laptop): show the diff and wait for Monte's explicit approval before committing.
-- **Autonomous / cloud sessions** (Claude Code on the web, GitHub triggers): the task you were given is the approval — commit and push per the task using the prefixes above. Don't block waiting for a human who isn't watching.
+- **Interactive sessions** (Claude Code on Monte's laptop): show the diff and wait for Monte's explicit approval before committing.
+- **Autonomous / cloud sessions** (Claude Code on the web, GitHub triggers): the task you were given is the approval — commit and push **directly to `main`** using the prefixes above. Work on `main` by default; don't open feature branches unless Monte asks. Don't block waiting for a human who isn't watching.
 - Push after every committed change — Vercel auto-deploys, so push = deploy.
 - Small focused commits over batched ones.
 - Use `trash` for deletes, never `rm -rf` on tracked content.

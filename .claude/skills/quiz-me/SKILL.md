@@ -55,8 +55,8 @@ Parse two axes from his message: **difficulty** and **medium**. Missing either �
 
 ### Image medium — local vs cloud agent
 
-- **Local agent (Cursor / Claude Code on Monte's laptop):** call the `nano-banana` skill (it's symlinked into `~/.claude/skills/nano-banana/` from `ash-core`). It's a thin wrapper around Gemini's image API.
-- **Cloud agent (Claude Code Cowork / Cursor Cloud on this repo):** the `nano-banana` skill is **not available** — cross-project skills don't ship with cloud-agent clones. For now, **fall back to text medium** and tell Monte: *"Image medium needs the local nano-banana skill. Falling back to text. (Inline Gemini API support in this repo is a TODO.)"* If/when image medium becomes a real cloud need, we'll inline the Gemini call into this skill or copy the script into `.claude/skills/quiz-me/scripts/`.
+- **Local agent (Claude Code on Monte's laptop):** call the `nano-banana` skill (it's symlinked into `~/.claude/skills/nano-banana/` from `ash-core`). It's a thin wrapper around Gemini's image API.
+- **Cloud agent (Claude Code on the web):** the `nano-banana` skill is **not available** — cross-project skills don't ship with cloud-agent clones. For now, **fall back to text medium** and tell Monte: *"Image medium needs the local nano-banana skill. Falling back to text. (Inline Gemini API support in this repo is a TODO.)"* If/when image medium becomes a real cloud need, we'll inline the Gemini call into this skill or copy the script into `.claude/skills/quiz-me/scripts/`.
 
 ## Topics (interests)
 
