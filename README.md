@@ -5,6 +5,7 @@ A trivia log with an AI quizmaster. Ash (Claude) quizzes you on topics you pick 
 **Try it live:** [quizmenexus.vercel.app](https://quizmenexus.vercel.app)
 
 [![Live Demo](https://img.shields.io/badge/demo-quizmenexus.vercel.app-2ea44f)](https://quizmenexus.vercel.app)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
 [![Built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-d97757)](https://claude.com/claude-code)
 
@@ -103,3 +104,7 @@ Next up (see [`PLAN.md`](PLAN.md) for the full list): a `/play` guest mode — a
 ## Credits
 
 Made by [Monte Thakkar](https://x.com/montethakkar), built with [Claude Code](https://claude.com/claude-code) — Ash wrote the questions.
+
+## License
+
+[MIT](LICENSE) © Monte Thakkar
