@@ -13,6 +13,7 @@
       "Bash(git branch:*)",
       "Bash(git checkout:*)",
       "Bash(git restore:*)",
+      "Bash(git rm:*)",
       "Bash(git rev-parse:*)",
       "Bash(ls:*)",
       "Bash(cat:*)",
@@ -26,6 +27,8 @@
       "Bash(mkdir:*)",
       "Bash(mv:*)",
       "Bash(cp:*)",
+      "Bash(chmod:*)",
+      "Bash(trash:*)",
       "Bash(node:*)",
       "Bash(pnpm:*)",
       "Bash(pnpm install:*)",
@@ -34,9 +37,29 @@
       "Bash(pnpm lint:*)",
       "Bash(pnpm db:migrate:*)",
       "Bash(pnpm db:seed:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
       "Bash(psql:*)",
+      "Bash(pg_ctlcluster:*)",
+      "Bash(createdb:*)",
+      "Bash(dropdb:*)",
+      "Bash(su postgres:*)",
+      "Bash(curl:*)",
+      "Bash(openssl:*)",
       "WebFetch",
       "WebSearch"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
     ]
   }
 }

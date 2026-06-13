@@ -72,7 +72,7 @@ Grading is the point. Wrong answers get the chain of facts that lead to the righ
 Developed spec-first with AI agents:
 
 - [`PLAN.md`](PLAN.md) is the living roadmap — current state, phases, and backlog
-- [`AGENTS.md`](AGENTS.md) is the source of truth for repo conventions, the quizzing contract, and the voice AI agents follow
+- [`CLAUDE.md`](CLAUDE.md) is the source of truth for repo conventions, the quizzing contract, and the voice AI agents follow
 - [`BRAND.md`](BRAND.md) holds the visual + voice identity for the product
 - [`.claude/skills/quiz-me/`](.claude/skills/quiz-me/) is an in-repo Claude Code skill: say "quiz me hard" in a session and Ash poses a question, grades your answer, and commits it to the log
 
